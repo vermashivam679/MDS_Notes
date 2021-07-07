@@ -1,0 +1,420 @@
+Questions:
+
+1: bootstraping is a lot dependent on the one sample that you draw, if that sample is a bad one then the bootstrap might be a bad one, how do you judge that the bootstrap that you generated is correct approximation of sampling distribution
+
+
+
+
+
+set.seed(1234)
+> virtual_box <- tibble(timbit_id = seq(1, 10000, 1), color = factor(rbinom(10000, 1, 0.63), labels = c("old fashioned", "chocolate")))
+virtual_box %>% group_by(color) %>% summarize(length(color))
+
+set.seed(4321)
+sample_1 <- rep_sample_n(virtual_box, size=40)
+sample_1 %>% group_by(color) %>% summarize(length(color))
+
+
+sample_122 <- rep_sample_n(virtual_box, size=40, reps=122)
+sample_122 %>% group_by(replicate, color) %>% summarize(length(color))
+
+
+
+
+
+
+setup plot size in jupyter
+library(repr)
+options(repr.plot.width = 5, repr.plot.height = 4)
+
+
+
+
+
+
+
+unlist converts data.frame to a vector
+
+
+lec 2
+
+sampling distribution is approximately gaussian
+population distribution is the same as one random sample from the distribution
+
+
+
+standard error: the standard deviation of the sampling distribution
+	standard error reduces if the sample size increases
+
+
+replace=T can be used to create a bootstrap sample from one sample
+
+there is ungroup() function to ungroup the tdata
+
+infer package
+	specify(), generate(), calculate(), visualize()
+
+
+
+
+
+
+
+
+
+Functions:
+
+rep_sample_n
+pull
+sample_dist <- ggplot(one_sample, aes(age)) + 
+    geom_histogram(bins = 50) +
+    scale_y_continuous(labels = comma) +
+    xlab("Age (years)") +
+    xlim(c(64, 120)) +
+    geom_vline(xintercept = mean_sample, colour = "red") + 
+    annotate("text", x = 90, y = 4, label = mean_sample) +
+    ggtitle("Sample distribution")
+
+sampling_dist <-  ggplot(samples, aes(x = avg)) +
+    geom_histogram(bins = 50) +
+    scale_y_continuous(labels = comma) +
+    xlab("Age (years)") +
+    xlim(c(64, 120)) +
+    geom_vline(xintercept = mean_sampling_dist, colour = "red") + 
+    annotate("text", x = 92, y = 38, label = mean_sampling_dist) +
+    ggtitle("Sampling distribution")
+
+# Options to choose in jupyter notebook
+options(repr.plot.width = 8, repr.plot.height = 2.5) # set plot display size in Jupyter
+grid.arrange(pop_dist, sample_dist, sampling_dist, ncol=3)
+
+
+# bootstrap distribution of a sample
+set.seed(1234)
+bootstrap_distribution <- ungroup(one_sample) %>% 
+    specify(response = age) %>% 
+    generate(reps = 1000) %>% 
+    calculate(stat = "mean")
+head(bootstrap_distribution)
+
+bootstrap_distribution %>% visualize()
+
+
+# visualise bootstrap distribution
+bootstrap_dist_mean <- bootstrap_distribution %>% 
+    pull(stat) %>% 
+    mean() %>% 
+    round(2)
+
+bootstrap_dist <- ggplot(bootstrap_distribution, aes(stat)) + 
+    geom_histogram(binwidth = 0.5) +
+    scale_y_continuous(labels = comma) +
+    xlab("Age (years)") +
+    xlim(c(70, 90)) +
+    geom_vline(xintercept = bootstrap_dist_mean, colour = "red") + 
+    annotate("text", x = 86, y = 60, label = paste("Bootstrap \n distribution \n mean = ", bootstrap_dist_mean))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sample_dist <- sampling_distribution %>% 
+    ggplot(aes(ht)) + 
+    geom_histogram(bins=60) + 
+    scale_y_continuous(labels = scales::comma) +
+    xlab("Height(cm)") +
+    ylab("Frequency") +
+#    xlim(c(120, 220)) +
+#    ylim(c(0, 800)) +
+    geom_vline(xintercept = mean_sampling_dist_100, colour = "red") + 
+    annotate("text", x = 150, y = 600, label = paste("Sample Distribution Mean:", mean_sampling_dist_100, "\n Sample Size:", 100)) +
+    ggtitle(paste("Sampling distribution, Sample Size=", 100))
+
+
+boot_dist <- bootstrap_distribution %>% 
+    ggplot(aes(stat)) + 
+    geom_histogram(bins=60)
+    scale_y_continuous(labels = scales::comma) +
+    xlab("Height(cm)") +
+    ylab("Frequency") +
+    xlim(c(120, 220)) +
+    ylim(c(0, 800)) +
+    geom_vline(xintercept = mean_boot, colour = "red") + 
+    annotate("text", x = 150, y = 600, label = paste("Bootstrap Distribution Mean:", mean_boot, "\n Sample Size:", 100)) +
+    ggtitle(paste("Sampling distribution, Sample Size=", 100))
+
+
+
+
+
+Slack Questions
+1. If a limited dataset has 100 data points in total, when we use bootstrapping is our sample size also 100? Also in this case, can we consider our 100 data points to be the population?
+2. If we have a lot of data, when would we use sampling distributions vs. bootstrapping? Is one better than another in this scenario?
+
+Rodolfo's answers
+1. What do you mean by limited dataset?
+You create a bootstrap samples (which are samples with replacements of your  original sample) because you are not able to take other samples from your population and you still want to evaluate your estimator. To assess how your estimator behaves with a sample of size 100, you need to create bootstrap samples of size 100. Why is that? Well, for example, you estimator will probably have a lower variance if you had a sample size of 150, instead of 100. So, say your original sample size is a 100, and you take bootstrap samples of size 150. Now, you evaluate the standard error of you estimator using the bootstrap samples. Then, you're getting an estimate of standard error for your estimator when the sample size is 150 (which is probably smaller than when the sample size is a 100). Therefore, you'll be underestimating your standard error. For this reason, you need to have the same sample size in your bootstrap sample. Makes sense?
+
+2. You use bootstrap to estimate your sampling distribution actually. Your sampling distribution is very important, as it tells you how accurate your estimator is. If it biased, if it has a high standard error. This will affect your confidence interval and hypothesis testing (later in this course). However, it is very hard to obtain the actual sampling distribution if you have only one sample. So, you use bootstrap sampling to try to learn a little bit more about your sampling distribution. If you knew your sampling distribution (sometimes we do) you wouldn't need the bootstrap sample at all.
+
+
+
+
+
+
+
+
+
+###########333
+If we repeated this process of building confidence intervals more times with more samples, we’d expect ~ 95% of them to contain the value of the population parameter.
+The above statement is precise, and correct. However it is a little long, thus in practice we often say the following instead:
+
+We are 95% “confident” that the value of the population parameter is somewhere within the 95% confidence interval we calculated.
+###########333
+
+
+
+
+
+lecture 3
+
+
+nest() creates a tibble of tibbles
+
+
+
+GREAT LINK TO UNDERSTAND BOOTSTRAPIN
+Ghttps://stats.stackexchange.com/questions/133376/mean-of-the-bootstrap-sample-vs-statistic-of-the-sample
+
+
+
+###### Be Aware...bhund ho k likha tha....P.S. ye comment bhi bhund ho k likha tha Hahahahahaha
+If i optimize my bootstrap mean to be equal to sample mean then what i get is a sample which correctly represents the population.
+
+How does bootstrap approximates the sampling distribution becasue theretticaly it should come out to be same. As the bootstrap mean converges that means it has become closer to the sampling distribution. and the difference in the mean stats and the bootstrap mean is the bias of sample which generally reduces if n increases, that is how bias is removed
+
+I think if i increase n then if the bootstrap mean comes out to be same then we can say that bootstrap is not biased, which will not be biased if you take the right number of bootstraps. You should take that many bootstraps where the mean converges. The question is will it converge. IF you take bigger n you will.
+
+To sum up.....
+	if i increase n my bootstrap should converge and the point where it converges will give me correct number of bootstraps. So now i have a good population distribution.
+###### Be Aware...bhund ho k likha tha....P.S. ye comment bhi bhund ho k likha tha  Hahahahahaha
+
+
+
+
+
+
+
+
+
+
+you can't bootstrap based on the data of alternate hypothesis becasue its a representative of the null population.
+
+
+
+can we use computational methods like bootstrapping or permutation for point hypothesis tests
+
+
+
+
+
+
+
+
+
+
+
+
+
+The probability of a Type I Error occurring is denoted by α. The value of α is called the significance level of the hypothesis test, which we defined in Section 9.2
+The probability of a Type II Error is denoted by β. The value of 1−β is known as the power of the hypothesis test.
+
+So for example if we used α = 0.01, we would be using a hypothesis testing procedure that in the long run would incorrectly reject the null hypothesis H0 one percent of the time. This is analogous to setting the confidence level of a confidence interval.
+
+- In case of a lower α we would reject the null hypothesis H0 only if we have very strong evidence to do so. This is known as a “conservative” test.
+- In case of a higher α we would reject the null hypothesis more often. In other words, we would reject the null hypothesis H0 even if we only have mild evidence to do so. This is known as a “liberal” test.
+
+
+Recall that in hypothesis testing you can make two types of errors
+• Type I Error – rejecting the null when it is true.
+• Type II Error – failing to reject the null when it is false.
+
+- The probability of a Type I Error in hypothesis testing is predetermined by the significance level. 
+- The probability of a Type II Error cannot generally be computed because it depends on the population mean which is unknown. 
+- It can be computed at, however, for given values of µ, σ^2 , and n . 
+- The power of a hypothesis test is nothing more than 1 minus the probability of a Type II error. Basically the power of a test is the probability that we make the right decision when the null is not correct (i.e. we correctly reject it). 
+
+Look at the solved example here:
+    https://www.ssc.wisc.edu/~gwallace/PA_818/Resources/Type%20II%20Error%20and%20Power%20Calculations.pdf
+
+
+
+## Careful bhund ho k likha h...
+	in case of type 2 error i need to understsnd i have to limit my space to those only when i am acceptiung the hypothesis...so it will be like area of the actual population distribution /area of acceptance of the null distribution. and that is how power will be 1-beta because now its normalised for the given condition which is i have to accept the null hypothesis. so basically, type 2 error is P(the hypothsis is actually wrong given i am acceting it baed on null dist.) or is it P(accepting the null hypthesis given its wrong)?
+
+	Another thought that i have now is that in type 1 error you fix $\alpha$ to be 1% or 5% but you cant control type 2 error. Whatever test statistic you have you compare from that point. If it is less than test stats i accept or more than then i rejects. Because that is how its defined. I think
+## Careful bhund ho k likha h...
+
+
+
+very good explaination of degree of freedom...
+	https://www.researchgate.net/post/Why_does_t-distribution_have_n-1_degree_of_freedom
+		Imagine you have 4 numbers and the mean of them is 5.
+		a , b , c , d  mean is  5. so you must have 4 numbers that the sum of them is equal to 20.
+		Now I want to suggest these 4 numbers freely. for the first one I say 5
+		5 + b + c + d = 20 
+		for next number i suggest 2
+		5 + 2 + c + d  = 20
+		for the next number i suggest 0
+		5 + 2 + 0 + d = 20
+		now for the fourth number (d) I have not the freedom to suggest a number anymore, because the fourth one (d) must be 13. 
+		so you have freedom to choose 3 of them minus 1 of them.
+		so n-1 is the degree of freedom for measuring the mean of a sample form a population.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Does null & alternate covers the whole parametric space
+	yes, wierd ones come when the population space reduces
+
+
+
+
+
+
+American Statistical Association p-value
+	https://www.amstat.org/asa/files/pdfs/P-ValueStatement.pdf
+
+
+
+
+
+
+
+infer structure cheatsheet
+	df %>%
+	  specify(response, explanatory) %>% # explanatory optional
+	  generate(reps, type) %>% # type: bootstrap, simulate, or permute
+	  calculate(stat)
+	Always start with data frame
+	Result is always a data frame with a variable called stat
+	See the documentation for calculate to see which statistics can be calculated
+	For hypothesis testing add a hypothesize() step between specify() and generate()
+	for a threshold test choose null = "point", and then specify the null value
+	for a group comparison test (e.g., diff in means) choose null = "independence"
+
+
+
+
+More details on type 1 & type 2 errors & power of a hypothesis test
+	https://newonlinecourses.science.psu.edu/stat414/node/304/
+	In general, for every hypothesis test that we conduct, we'll want to do the following:
+		(1) Minimize the probability of committing a Type I error. That, is minimize α = P(Type I Error). Typically, a significance level of α ≤ 0.10 is desired.
+		(2) Maximize the power (at a value of the parameter under the alternative hypothesis that is scientifically meaningful). Typically, we desire power to be 0.80 or greater. Alternatively, we could minimize β = P(Type II Error), aiming for a type II error rate of 0.20 or less.
+
+
+
+
+
+Some literature on MLE
+	https://www.stat.cmu.edu/~cshalizi/mreg/15/lectures/06/lecture-06.pdf
+	Itas like the probability of drawing that sample from the distribution we are thinking it is coming from.
+
+
+can I compare MLE from 2 distributions
+	should be possible
+
+
+In the lecture ..density.. was used, which gives the density frequency histogram
+	https://newonlinecourses.science.psu.edu/stat414/node/120/
+
+
+
+
+
+# Something called ECDF(Empirical CDF)
+edf <- ggplot(sample, aes(x)) + 
+                stat_ecdf(geom = "step") +
+                ggtitle(paste("n = ", n)) +
+                ylab(expression(paste(hat(F), "(x)"))) +
+                xlim(c(0, 70)) +
+                theme(axis.title.y = element_text(angle = 0, vjust = 0.5))
+}
+
+
+
+# Drawing the density
+options(repr.plot.width = 3, repr.plot.height = 2.5)
+ggplot(data = data.frame(x = c(-4, 4)), aes(x)) +
+    stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 1)) +
+    ylab("") + xlab("")
+
+
+
+# Tiffany overlayed one graph geom on top of another here:
+	https://github.ubc.ca/MDS-2019-20/DSCI_552_stat-inf-1_students/blob/master/lectures/07_communicating_statistical_inference.ipynb
+
+
+
+Types of analysis
+	https://science.sciencemag.org/content/347/6228/1314
+
+
+
+P-values can indicate how incompatible the data are with a specified statistical model.¶
+	A p-value provides one approach to summarizing the incompatibility between a particular set of data and a proposed model for the data.
+	The smaller the p-value, the greater the statistical incompatibility of the data with the null hypothesis, if the underlying assumptions used to calculate the p-value hold.
+	This incompatibility can be interpreted as casting doubt on or providing evidence against the null hypothesis or the underlying assumptions.
+
+
+
+Important codes from lecture
+
+
+
+
+
+
+
+
+

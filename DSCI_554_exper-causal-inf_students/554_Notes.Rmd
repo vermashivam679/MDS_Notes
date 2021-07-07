@@ -1,0 +1,901 @@
+---
+title: "554_notes"
+author: "Shivam Verma"
+date: "15/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+library(ggplot2)
+library(rsample)
+library(samplesize)
+library(pwr)
+```
+
+
+
+**Suppose the null hypothesis for a statistical test is true. What is the distribution of the p-value?** 
+
+- When the null hypothesis for a statistical test is true then there is no actual relationship and the statistic we obtain will be a random variable following the null distibution. 
+
+- Let the sample statistic be $T$, $H_0: X>0$ , and CDF of test-statistic ($T$) be $F(t)=P(T<t)$ which is the same as the p-value. 
+
+- We calculate the CDF of p-value assuming p-value follows some distribution, $F_p(p) = P(P<p)$ 
+
+- Since under the null hypothesis, $P=F(T)$, we can say $F_p(p) = P(F(T) < p) = P(T<F^{-1}(p)) = F(F^{-1}(p)) = p$ 
+
+- So the CDF of p-value is linear which means the pdf will be a constant between 0 & 1. Therefore, p-value follows a $Uniform[0,1]$ distribution. 
+
+- But if the Null is actually not true then the p-value will not follow a uniform distribution. Probably because $P \neq F(T)$ because the random variable $P$ which is the p-value will be from the CDF of Null distribution but $T$ will be from the actual distribution (alternate hypothesis). So it will be skewed towards the true p-value. 
+
+
+
+
+**The Bonferroni correction:** Guarding (conservatively) against cheating 
+
+- __Simple idea__: If $m$ comparisons (hypothesis tests) are to be carried out, use significance level $\alpha/m$ for each. 
+- The __family-wise error rate (FWER)__ is the chance that one or more of the **true** null hypotheses are rejected. 
+- If each comparison is made at significance level $\alpha/m$, then the FWER is guaranteed to be $\alpha$ or less. 
+- $Pr\{R_1 \; \mbox{or} \; R_2 \; \mbox{or} \; \dotsc \; \mbox{or} \; R_m\} \leq Pr\{R_1\} + Pr\{R_2\} + \dotsb + Pr\{R_m\}$
+- The only way for a test to be significant will be when there is strong correlation and large sample size. 
+
+
+
+**The False Discovery Rate (Benjamini-Hochberg Method):** 
+
+- [Tiffany's Notes are Awesome](https://github.ubc.ca/MDS-2019-20/DSCI_554_exper-causal-inf_students/blob/master/supplemental_resources/fdr-bh.pdf) 
+
+![BH1](BH_1.jpg)
+![BH1](BH_2.jpg)
+![BH1](BH_3.jpg)
+
+
+Which Correction Method to use: 
+
+1. The Bonferroni correction: choose this if high confidence in all findings labelled as “significant” is needed (i.e., if its better to be very conservative and have false negatives). 
+
+2. The False Discovery Rate: choose this if a certain proportion of false positives in all findings labelled as “significant” is tolerable (i.e., if its better to be more liberal and have false positives). 
+
+
+
+**Beauty of randomization:**  $X$ inherently independent of any and all confounding variables.  License to use **cause**, rather than some weaker word, above.
+
+Examples: 
+
+- Randomize patients in the study to Drug A or Drug B.  *Which drug **causes** the best patient outcomes?* 
+- Randomize plots of the test field to different combinations of fertilizer and manure levels.  *Which combination **causes** the best crop yield?* 
+- Randomize visitors to a website to different versions of the site.  *Which version **causes** visitors to stay longer?* 
+
+
+###  Two big-picture strategies for dealing with confounding 
+
+- Stratify, i.e., look at the X-Y association within subgroups of subjects having the same values of confounding variables. 
+  - Or a "model-based" version of this strategy: Regress $Y$ on $X$ and $C_1, C_2, \ldots C_p$. 
+
+- Collect the data differently, i.e., in a **randomized experiment**. 
+  - Randomize each subject to **force** $X=0$ or $X=1$.  (Then free to simply compare $Y$ across the $X=0$ and $X=1$ groups.) 
+
+[Read more on this](https://machinelearningmastery.com/confounding-variables-in-machine-learning) 
+
+
+
+```{r, eval=FALSE}
+fit.basic <- lm(Duration ~ Font + Colour, data=dat)
+summary(fit.basic)
+anova(fit.basic) # This is an example of **two-way** ANOVA, since two **factors**, font and colour, are being varied in the experiment.
+
+fit.interaction <- lm(Duration ~ Colour * Font, data=dat)
+summary(fit.interaction)
+anova(fit.interaction)
+
+
+
+fontb.aov <- aov(Duration ~ Font, data=dat[dat$Colour=="Blue",])
+summary(fontb.aov)
+
+fit.blue <- lm(Duration ~ Font, data=dat[dat$Colour=="Blue",])
+summary(fit.blue)
+
+
+fontr.aov <- aov(Duration ~ Font, data=dat[dat$Colour=="Red",])
+summary(fontr.aov)
+
+fit.red <- lm(Duration ~ Font, data=dat[dat$Colour=="Red",])
+summary(fit.red)
+
+
+
+```
+
+
+If factor 1 has $p_{1}$ levels and factor 2 has $p_{2}$ levels: 
+
+- $p_1 - 1 \hspace{1.in}$ terms/features/dummy variables are needed to represent the main effect of factor 1. 
+- $p_2 - 1\hspace{1.in}$ terms/features/dummy variables are needed to represent the main effect of factor 2. 
+- $p_1 + p_2 - 1\hspace{1.in}$ terms/features/dummy variables are needed to represent the main effect of factor 1 & 2. 
+- $(p_1 - 1)(p_2 - 1)\hspace{0.3in}$ terms/features/dummy variables are needed to represent the interaction between factor 1 and factor 2. 
+
+
+### Blocking
+
+First, stratify your experimental units into homogeneous blocks. Second, within each block, randomize the units to the treatments. 
+
+```{r, eval=FALSE}
+
+### how is the population distributed across 
+### the demographic strata? (un-normalized probability distribution)
+dmg.dst <- seq(from=5,to=1, length=num.block)
+
+### how different are the blocks really?
+alpha <- rnorm(num.block, sd=2.5)
+
+### how different are visitors within a block?
+sig <- 1.0
+
+### how much better is the new site design than the old?
+theta <- 0.5
+
+
+## Experiment A: **without** blocking
+### demographics of your participants
+dmg <- sample(1:num.block, size=N, prob=dmg.dst, replace=T)
+
+### balanced randomization of treatment
+x <- sample(c(rep(0,N/2),rep(1,N/2)))
+
+### response (when x is 0 then it will be some distribution & when x=1 then theta is added to mean)
+y <- rnorm(N, mean=alpha[dmg] + theta*x, sd=sig)
+
+dat.A <- data.frame(x=x, y=y, dmg=dmg)
+
+
+## Experiment B: **with** blocking
+x <- dmg <- NULL
+for ( i in 1:num.block) {
+
+  ### each block has own balanced randomization
+  x <- c(x, sample(c(rep(0, siz.block/2), 
+                     rep(1, siz.block/2))))
+
+    dmg <- c(dmg, rep(i, siz.block))
+}  
+
+### response
+y <- rnorm(N, mean=alpha[dmg] + theta*x, sd=sig)  
+
+dat.B <- data.frame(x=x, y=y, dmg=dmg)
+```
+
+
+
+### Where are we at? 
+
+Made up a ficticious "population" of susbscribers to a website
+
+* Distributed *unequally* across 20 demographic strata 
+* Response $Y$ driven by a combination of: 
+  * demographics 
+  * site version 
+  * random variation, i.e., "noise" 
+
+Considered: 
+
+* A: experiment using just randomization 
+* B: experiment using randomization within (demographic) blocks 
+
+Either way, obtain data on 120 subscribers.
+
+
+### **Simulated** reality is as follows
+
+* 20 demographic categories, each with a different mean duration time on your website. $D_i$ encodes the demographic category of visitor $i$. 
+* The effect across all groups of the treatment (new site design) is $\theta=0.5$. 
+
+
+In math:
+
+$Y_i = \alpha_{D_i} + \theta I_{\text{trt},i} + \epsilon_i$
+
+
+
+
+### Strategy to Study Experiment A & B 
+
+- Strategy 1: Analyze Experiment A as per its design 
+  - `summary(lm(y~x, data=dat.A))$coef[,-3]` 
+- Strategy 2: Analyze Experiment A, post-hoc adjustment for demographics (presuming demographics were recorded) 
+  - `summary(lm(y~x+as.factor(dmg), data=dat.A))$coef[,-3]` 
+- Strategy 3: Analyze Experiment B, as per its design 
+  - `summary(lm(y~x+as.factor(dmg), data=dat.B))$coef[,-3]` 
+
+
+**Important Metric to Consider:** 
+
+* **BIAS:** the average, over the 500 datasets, of $\hat{\theta} - \theta$ 
+* **ROOT-MEAN-SQUARED ERROR:** the square root of the average (over the 500 datasets) of $(\hat{\theta}-\theta)^{2}$.  \alert{Interpretable as the typical magnitude of estimation error.} 
+* **COVERAGE:** the proportion (amongst the 500 datasets) of the 95\% confidence intervals that contain the true value. 
+* **POWER:** (applicable when $\theta \neq 0$):   The proportion of the 500 confidence intervals that exclude zero. 
+
+
+**Simulation Study:** Generate many (say 500) datasets under this state of reality, record the *average* behaviour of one (or more) methods across these datasets. 
+
+
+|           |   BIAS|  RMSE|  CVRG|   PWR|
+|:----------|------:|-----:|-----:|-----:|
+|Strategy 1 | -0.008| 0.522| 0.930| 0.188|
+|Strategy 2 | -0.005| 0.205| 0.944| 0.698|
+|Strategy 3 |  0.001| 0.178| 0.954| 0.806|
+
+
+
+> For Strategy 1 to get on par power Need 7x the sample size! 
+
+
+
+Blocking is especially useful with small/modest sample sizes. So blocking can be your friend (both in study design and data analysis). Well, so long as the blocks really are homogeneous. You want to be stratifying your experimental units into blocks so that: 
+
+* as much variation in $Y$ as possible is *across* blocks 
+* as little variation in $Y$ as possible is *within* blocks 
+
+If within-group variation is (a lot) larger than between-group variation, blocking can be less beneficial (and may reduce the power). 
+
+
+## Type I & Type II Error Recap 
+
+- Recall that in hypothesis testing you can make two types of errors 
+  - Type I Error – rejecting the null when it is true. 
+  - Type II Error – failing to reject the null when it is false. 
+
+- The probability of a Type I Error in hypothesis testing is predetermined by the significance level $\alpha$. 
+- The probability of a Type II Error cannot generally be computed because it depends on the population mean which is unknown. 
+- It can be computed at, however, for given values of $\mu$, $\sigma^2$ , and $n$. 
+- The power of a hypothesis test is nothing more than 1 minus the probability of a Type II error. Basically the power of a test is the probability that we make the right decision when the null is not correct (i.e. we correctly reject it). 
+- [Look at the solved example](https://www.ssc.wisc.edu/~gwallace/PA_818/Resources/Type%20II%20Error%20and%20Power%20Calculations.pdf)
+- [Look at this video for optimal samplesize for enough power](https://www.youtube.com/watch?v=vnjjhQDedvs&list=PL49NqvmjlHycEb65HuZbNCSFGVXTmvmPU&index=2&t=8s) 
+- [Lab2 Q2.3 A/B testing](https://github.ubc.ca/MDS-2019-20/DSCI_554_lab2_sverma92/blob/master/lab2.ipynb) 
+
+- In case of a lower $\alpha$ we would reject the null hypothesis $H_0$ only if we have very strong evidence to do so. This is known as a “conservative” test. 
+- In case of a higher α we would reject the null hypothesis more often. In other words, we would reject the null hypothesis $H_0$ even if we only have mild evidence to do so. This is known as a “liberal” test. 
+
+
+
+
+## A/B Testing Scenario 
+
+> **Boss's Question:** I want to do an A/B test to see if a tweak (version B) of our existing site (version A) promotes site visitors to stay longer. The boss won't sign off on this without some certainty around how many days we will be running our site in "randomize" mode. We know that currently most visitors stay between 30 seconds and 2 minutes. Also relevant: we would make a permanent switch to the tweaked site if we were convinced it improved visit length by 3% (or more). What should I tell the boss? 
+
+> **Answer:** If we run our experiment with **blah** participants, then we have a **blah** chance (or more) of being convinced of a difference between the two treatment groups, provided  that the difference truly is **blah** (or greater). 
+
+
+
+- Let the response $Y$ be  the **log-transformed** visit time. $Y \sim N(\mu_{A},\sigma^{2})$ amongst those served the A version of the site. 
+  - Anticipated value for $\sigma$ `sig.guess <- (log(120)-log(30))/(2*1.96)` 
+
+- Recall, 3\% multiplicative increase in visit times is of 'business importance'. 
+  - A $3\%$ *multiplicative* change on an original scale corresponds to roughly a $0.03$ *additive* change on the log-scale because $log(1+x) \approx x$. 
+
+- Type I errpr: `alpha <- 0.05` 
+- Desired Power in test: `pow <- 0.8` 
+
+```{r}
+sig.tr <- (log(120)-log(30))/(2*1.96)
+
+# required sample size
+samplesize::n.ttest(mean.diff=.03, sd1=sig.tr)
+
+# Power Calculator
+pwr::pwr.t.test(d=.03/sig.tr, sig.level=.05, power=0.8,
+           type="two.sample", 
+           alternative="two.sided")
+
+# E.g., Would like to assess whether a tweak to our site would increase the click-through rate from 5/1000 to 7/1000 
+pwr.2p.test(h=ES.h(.005,.007), sig.level=.05, power=0.8, alternative="two.sided")
+
+
+BaseRt <- (1:8)/200
+Delta <-  (1:8)/400
+
+n.req <- matrix(NA,8,8)
+for (i in 1:8) { for (j in 1:8) {
+  n.req[i,j] <- 2*pwr.2p.test(
+    h=ES.h(BaseRt[i], BaseRt[i]+Delta[j]), 
+    sig.level=.05, power=0.8,
+    alternative="two.sided")$n  
+} }
+
+# From BaseRt to Delta increase in click thru rate
+n.req
+
+cls <- colorRampPalette(c("blue","green"))(8)
+plot(rep(Delta,each=8), n.req, xlim=c(0,.02),
+     col=rep(cls,8), pch=19, log="y",
+     xlab=expression(Delta),ylab="Required n") 
+abline(h=5000*(1:20), lty=3)
+legend("topright",legend=BaseRt,col=cls,pch=19)
+
+```
+
+```{r}
+
+### say the world really is the following way:
+sig.tr <- (log(120)-log(30))/(2*1.96)
+delta.tr <- 0.05
+mu.A.tr <- (log(30)+log(120))/2
+n <- 4363
+
+### simulate m.rep virtual replications of the experiment
+m.rep <- 5000
+teststat <- rep(NA, m.rep)
+
+for (i in 1:m.rep) {
+  x <- sample(0:1, size=n, prob=c(0.5,0.5), replace=T)
+  y <- rnorm(n, mean=mu.A.tr + x*delta.tr, sd=sig.tr)
+
+  ### two-sample t-test in disguise
+  ft <- lm(y~x)
+  teststat[i] <- summary(ft)$coef[2,"t value"]
+}
+
+table(sapply(teststat, cut, 
+             breaks=c(-Inf,-1.96,1.96,Inf)))
+```
+
+
+> Boss, we need to randomize our next 4363 visitors. That way, if the new site is indeed 3% better (as we hope), we have an 80% chance of being convinced that there is an improvement. 
+
+
+- What if, in reality, there is actually a 4% change?
+  - We are **overpowered**, If there actually is a stronger relation then most of the time the null hypothesis in `lm()` will be rejected so we get more than $80\%$ of cases where we correctly reject the null. 
+  - If the actual effect is more then required sample size is less to prove it. 
+- What if, in reality, there is actually a 1.5% change? 
+  - We are **underpowered**. 
+
+
+
+
+
+
+
+
+
+| Terms |  Definitions |
+|----------------|------------|
+| Blocking | 1. Process of splitting the population into homogenous subgroups and sampling observational units from the population indpendently in each subgroup.
+| factorial_design | 2. Technique to investigate effects of several variables in one study; experimental units are assigned to all possible combinations of factors. | 
+| confounder | 3. A variable that is associated with both the explanatory and response variable, which can result in either the false demonstration of an association, or the masking of an actual association between the explanatory and response variable. |
+| stratification | 4. Grouping experimental units (i.e., in a sample) together based on similarity.  |
+| factor | 5. Explanatory variable manipulated by the experimenter. |
+| experimental_unit | 6. The entity/object in the sample that is assigned to a treatment and for which information is collected. |
+| replicate | 7. Repetition of an experimental treatment. |
+| balanced_design | 8. Equal number of experimental units for each treatment group. |
+| randomization | 9. Process of randomly assigning explanatory variable(s) of interest to experimental units (e.g., patients, mice, etc).  |
+| treatment | 10. A combination of factor levels. |
+| balanced design | 11. Statistically comparing a key performance indicator (conversion rate, dwell time, etc) between two (or more) versions of a webpage/app/add to assess which one performs better. |
+| observational_study | 12. A study where the primary explanatory variables of interest are not assigned by the researcher. |
+
+
+
+
+
+## Peeking while Testing 
+
+- **Scenario**: Based on the required power and estimated affect size we can calculate the required number of samples ($n_{max}$). What if we keep observing our t-statistic with every new sample and as soon as we realize we have a significant change we stop? 
+  - As soon as we are convinced that one version of the site is more profitable than the other, we want to serve that version to all visitors.
+
+
+
+**Figure**: Ten simulations with $n_{max}=5000$, $pr_{A} = 0.03$, $pr_{B} = 0.045$ 
+
+![p1](Peeking_1.jpg)
+
+
+**4000 Simulations of peeking at every sample** 
+
+```
+### Say the world is really the way we guess/hope it is
+pr.A <- 0.03; pr.B <- 0.045
+
+              (-Inf,-1.96] (-1.96,1.96] (1.96, Inf]
+  (0,1000]              32            0        1554
+  (1000,2000]            8            0         894
+  (2000,3000]            0            0         591
+  (3000,4000]            0            0         349
+  (4000,4999]            0            0         210
+  (4999,5000]            0          362           0
+Proportion of tests wherer t-stat was > 1.96: 0.8995
+
+
+###  Say we aren't as good at web design as we hoped
+pr.A <- 0.03; pr.B <- 0.036
+
+              (-Inf,-1.96] (-1.96,1.96] (1.96, Inf]
+  (0,1000]             146            0         677
+  (1000,2000]           21            0         436
+  (2000,3000]           13            0         264
+  (3000,4000]            7            0         223
+  (4000,4999]            1            0         202
+  (4999,5000]            0         2009           1
+Proportion of tests wherer t-stat was > 1.96: 0.45075
+
+
+### Say we REALLY over-estimate our web design talents!
+pr.A <- 0.03; pr.B <- 0.03
+
+              (-Inf,-1.96] (-1.96,1.96] (1.96, Inf]
+  (0,1000]             308            0         299
+  (1000,2000]          132            0         130
+  (2000,3000]           67            0          85
+  (3000,4000]           51            0          39
+  (4000,4999]           41            0          33
+  (4999,5000]            0         2815           0
+Proportion of tests wherer t-stat was > 1.96: 0.1465
+
+```
+
+
+
+To find something in between these 2 extremes: 
+- Accruing all $n_{max}$ visitors and not computing / looking at the Z-statistic until then. 
+- Real-time monitoring of the Z-statistic and (aggressively) stopping early. 
+
+
+## Function to simulate an A/B test with  *principled peeking* 
+
+```{r Principled Peeking, eval=FALSE}
+sim.peek <- function(n.max, alpha=0.05, pr.A, pr.B, n.peek=5) {
+  
+  ### will peek after this many visitors
+  n.inspect <- round(n.max*(1:n.peek)/n.peek)
+
+  dta <- matrix(0,2,2); z <- 0; n <- 0
+  ### *** note the Bonferroni adjustment ***
+  while ((abs(z)<qnorm(1-(alpha/n.peek)/2)) & (n<n.max)) {
+    n <- n+1
+    ## randomize the visitor, etc
+    x <- sample(0:1, size=1)
+    y <- rbinom(1, size=1, prob=pr.A+x*(pr.B-pr.A))
+    dta[x+1,y+1] <- dta[x+1,y+1]+1
+    
+    ## Is it a time to peek?
+    if (n %in% n.inspect) {
+      # z <- (log(dta[1,1])+log(dta[2,2])-log(dta[1,2])-log(dta[2,1])) / sqrt(sum(1/dta))
+      # alternative (see appendix):
+      p.star <- (dta[1,2]+dta[2,2])/sum(dta)
+      z <- ( dta[2,2]/(dta[2,1]+dta[2,2]) - dta[1,2]/(dta[1,1]+dta[1,2]) ) / sqrt(p.star*(1-p.star)*sum(1/rowSums(dta)))
+      # handle case of at least one element of `dta` is zero
+      if(is.nan(z)){
+        z <- 0
+      }
+    } 
+  } 
+  list(z=z, n=n) 
+}
+
+alpha <- 0.05
+n.peek <- 5
+z.cutoff <- qnorm(1-(alpha/n.peek)/2)
+
+```
+
+
+```
+### Say the world is really the way we guess/hope it is
+pr.A <- 0.03; pr.B <- 0.045
+
+
+       (-Inf,-2.58] (-2.58,2.58] (2.58, Inf]
+  1000            0            0         336
+  2000            0            0         560
+  3000            0            0         628
+  4000            0            0         560
+  5000            0         1406         510
+
+### Say we actually have no talent for website design
+pr.A <- 0.03; pr.B <- 0.03
+
+       (-Inf,-2.58] (-2.58,2.58] (2.58, Inf]
+  1000           16            0          18
+  2000           21            0          13
+  3000           14            0          10
+  4000            8            0           7
+  5000            5         3880           8
+```
+
+
+
+
+```
+## Pseudo Code to determine effective number of peekings
+For a number in number of allowed peaks in 1:10
+  For every simulation 1:4000
+    For every peak out of total allowed peaks
+      Store z-statistic
+    get minimum sample size in this simulation where z-stat was significantly different even after bonferroni adjustment
+  At this number of peaks calculate average from 4000 simulations
+
+  # "Power" in case of `pr.A <- 0.03; pr.B <- 0.045`; Type I error in case of `pr.A <- 0.03; pr.B <- 0.03`
+  rej.mean[n] <- percentage of simulations which resulted in significant statistic to reject the NULL
+  rej.sd[n] <- std.dev of above
+  n.mean[n] <- Average number of minimum samples required to reject the NULL. Average over simulations.
+  n.sd[n] <- std.dev of above
+
+
+Reality 1 (R1): pr.A <- 0.03; pr.B <- 0.03
+Reality 2 (R2): pr.A <- 0.03; pr.B <- 0.045
+
+```
+
+
+![p2](Peeking_2.jpg) 
+
+
+- The Power reduces if the number of peaks increases. 
+- Type I error reduces as peekings increase because we are using bonferroni adjustment which makes it increasingly aggressive. 
+- Number of observations required to detect early stopping remains same and mainly driven by affect size. These numbers are extracted assuming both realities are true in parallel universes. 
+
+
+### Implementations of a hypothesis test for impact of binary X on binary Y 
+
+```{r Binary X and Y}
+set.seed(13)
+x <- rbinom(400,size=1,prob=.5)
+y <- rbinom(400, size=1, prob=0.1+.04*x)
+
+dta <- table(x,y)
+dta
+
+### Can supply either raw or tabular data to glm()
+### to fit a logistic regression model
+
+ft1 <- glm(y~x, family=binomial)
+
+ft2 <- glm(dta[,2:1]~c(0,1), family=binomial)
+
+## Explicitly form a test statistic
+
+## using our log-odds-ratio theory
+zscr3 <- (log(dta[1,1]) + log(dta[2,2]) -
+          log(dta[1,2]) - log(dta[2,1])) /
+          sqrt(sum(1/dta))
+
+## or using our two-sample proportion test theory
+n0 <- sum(dta[1,]); p0.hat <- dta[1,2]/n0
+n1 <- sum(dta[2,]); p1.hat <- dta[2,2]/n1
+zscr4 <- (p1.hat-p0.hat)/
+     sqrt(p0.hat*(1-p0.hat)/n0 + p1.hat*(1-p1.hat)/n1)
+
+summary(ft1)$coef[2,"z value"]
+summary(ft2)$coef[2,"z value"]
+zscr3
+zscr4
+```
+
+
+
+## Observational Study 
+
+- Basically, any data where you didn't set up a randomized experiment. 
+- The randomization balances out all confounding variables, so that the two groups formed differ only in which site they see. Statistical evidence that B wins the A/B test directly equates to evidence that site B causes better sales (say) than site A. 
+
+- Without randomization, life is much harder. In general, the observational study strategy includes: 
+  1. To the extent possible, recording potential confounding variables as part of the data collection process. 
+  2. Using these potential confounding variables as part of the data analysis. 
+  3. Tempering the causal strength of claims, in light of the inherent challenges in 1 and 2. 
+
+
+**So we've got a $Y$, an $X$, and many $C$'s**
+
+For instance, in a pharmaco-epidemiology problem: 
+
+- $Y$ is a binary indicator of "bad disease state" two years after initial diagnosis. 
+- $X$ is a binary indicator of initiated drug A versus drug B within three months of initial diagnosis. 
+- $C$ is all sorts of demographic variables and health-status variables. 
+
+We aspire to use these observational data to determine what we would see **if we could do a randomized trial** with this $X$ and $Y$. 
+
+Merely addressing  whether $X$ is associated with $Y$ isn't helpful.  The relevant policy question is: Would fewer patients reach the bad disease state in a world where all were given drug B, compared to a world where all were given drug A? 
+
+
+
+
+Which two variables are we focussing on? 
+- Y is binary indicator of coronary heart disease 
+- X is binary indicator of "Type A behaviour" 
+
+```{r, eval=FALSE}
+### functions to extract log odds-ratio and SE, 
+### from 2 by 2 table of counts
+### logistic regression coefficients are interpreted in terms of log-OR.
+
+logOR.est <- function(tbl) {
+  log(tbl[1,1])+log(tbl[2,2])-
+  log(tbl[1,2])-log(tbl[2,1])
+}
+
+logOR.se <- function(tbl) {  
+  sqrt(sum(1/tbl))
+}       
+
+logOR.z <- function(tbl) {
+    logOR.est(tbl)/logOR.se(tbl)
+}
+
+### same estimated log-OR, SE, and Z via logistic regression?
+summary(glm(Y~X, family=binomial))$coef
+```
+
+*Terminology Alert*: Earlier, we discussed **blocking** vs. **stratified sampling**. Often, one sees **stratifying** used as short-hand for stratified sampling. Here, **stratifying** is short for **stratified analysis**. We'll see what this means shortly. 
+
+We can either do the analysis by stratifying based on the confounders and get point & interval estimates: 
+
+![obs1](Obs_Study_1.jpg) 
+
+
+Or use the model-based alternative to actually stratifying: Including C's in a regression model. If we *really* want to put a causal spin on our estimate and confidence interval (for the X coefficient), then we must assume: 
+
+1. There are only three confounding variables: agec, smoke, bmi.q. 
+2. The strength of the (X,Y) association within each of the 40 strata defined by the confounders is the same (i.e., no interactions). The strength of the $(X,Y)$ association within strata doesn't vary across strata. 
+3. There is simple/smooth structure in how Y varies across the strata. 
+
+For **causal** interpretations, various assumptions must be met: 
+
+- Some of them are testable/checkable (typically having to do with appropriate model specification issues like smoothness, lack of interactions between variable of interest and confounders, etc.) 
+- Almost always have at least one **untestable** assumption, e.g., no unobserved confounders 
+
+
+```{r, eval=FALSE}
+  ft <- glm(Y ~ X + agec + smoke + bmi.q, family="binomial")
+
+### Partial stress test of the third assumption (simple structure) 
+  ft2  <- glm(Y ~ X + agec * smoke * bmi.q, family="binomial")
+
+### Partial stress test of the second assumption, (X,Y) association is the same across strata
+
+  ft2 <- glm(Y ~ X + agec + smoke + bmi.q + X:agec, family="binomial")
+  print(anova(ft, ft2, test="LRT"))
+  
+  # an equivalent way of obtaining that information
+  print(anova(ft2, test="LRT"))
+  
+  ft2 <- glm(Y ~ X + agec + smoke + bmi.q + X:smoke, family="binomial")
+  print(anova(ft, ft2, test="LRT"))
+  
+  ft2 <- glm(Y ~ X + agec + smoke + bmi.q + X:bmi.q, family="binomial")
+  print(anova(ft, ft2, test="LRT"))
+
+### And one feeble stress test for the first assumption. Inference on our target parameter should not change under this expanded model
+  ft2 <- glm(Y ~ X + agec + smoke + bmi.q + chol.q, family="binomial")
+  anova(ft2, test="LRT")
+```
+
+
+When we fit a regression model to an observational dataset and interpret confidence intervals and P-values: 
+
+- Strictly, the interpretations presume that the $n$ units in your data are a random sample from a much larger population of units (and your statistical claims are about this larger population). 
+- Nonetheless, people commonly fit/interpret with datasets not arising from random sampling. 
+
+- It's common to see an observational dataset assembled from *all* units who meet a bunch of eligibility criteria, including time/space criteria. Very informally, there is **hope** that generalization (via confidence intervals say) applies to like units *in other places, at other times*. 
+  - For instance, say an observational study involves all new disagnoses of Multiple Sclerosis in B.C. in 2017.  We **hope** that fitting/interpreting models tells us something about Multiple Sclerosis patients diagnosed elsewhere and/or in the future. 
+
+- If $Y$ is categorical, with more than two categories. The extension to logistic regression to deal with this is known as  *multinomial logistic regression* or *multinomial logit regression*. There are packages (mlogit, nnet) to fit these models. 
+
+
+- Be aware that whereas multinomial logit models are on firm ground, the ad-hoc procedure like One-vs-One strategy (though it might result is similar point estimates) is not. 
+
+
+
+## "Plasmode" - a sandbox to play in 
+
+- Plasmode is a term used to describe a data set that has been derived from real data but for which some truth is known. In computer simulations,
+data for which the true value of a quantity is known are often simulated from statistical models, and the ability of a statistical method to estimate this quantity is evaluated on the simulated data. 
+
+- Which models appropriately produce data that reflect properties of real data is an open question. The use of plasmodes as one answer to this question. If done carefully, plasmodes can produce data that reflect reality while maintaining the benefits of simulated data. 
+
+- Plasmode allow statistical methodologists to **vet proposed techniques empirically (as opposed to only theoretically) and with data that are by definition realistic and representative**. 
+
+
+**Constructing a plasmode population**: 
+
+- Everyone in the real dataset contributes twenty clones to form the plasmode population (clones in terms of X and C, not Y). 
+- To mimic the structure of the actual dataset set the "true" relationship between Y and (X,C) in the plasmode pop 
+- Assign everyone in plasmode world a Y value. 
+
+```{r, eval=FALSE}
+### for simplicity, limit to 4 C variables
+
+plsmd.pop <- data.frame(
+  X=rep(dat$X, each=20),
+  agec=rep(dat$agec, each=20),
+  smoke=rep(dat$smoke, each=20),
+  bmi.q=rep(dat$bmi.q, each=20),
+  chol.q=rep(dat$chol.q, each=20))
+
+
+coef.pop <- round(coef(
+  glm(Y ~ X + agec + smoke + bmi.q + chol.q, 
+  family="binomial", data=dat)),2)
+
+
+expit <- function(z) {1/(1+exp(-z))}
+
+### assign everyone in plasmode world a Y value:
+plsmd.pop$Y <- rbinom(
+  n=dim(plsmd.pop)[1],
+  size=1,
+  prob=expit(
+    model.matrix(~X+agec+smoke+bmi.q+chol.q, data=plsmd.pop)%*%coef.pop)
+)
+
+## Sanity Checks
+round(coef(glm(Y ~ X + agec + smoke + bmi.q + chol.q, family="binomial", data=plsmd.pop)),2) - coef.pop
+
+
+```
+
+There are different ways of dipping in to extract data for an observational study. Method of data analysis reflects how this dipping was done. 
+
+## Different study designs often conceptualized temporally
+
+- **Cross-sectional (Contemporaneous):** Reach in to the popluation and grab a random sample - take an instantaneous snapshot of the study variables. 
+- **Case-control (Retrospective):** Assemble a group of people with the study disease ($Y=1$), and a group without ($Y=0$).  Ask each person - have you used tobacco in the past ($X=0$ never, $X=1$ ever). 
+- **Cohort (Prospective):** Assemble a group of currently healthy people who are shorter ($X=0$), and a group of currently healthy people who are taller ($X=1$).  Keep in touch with each person for three years, see who doesn't ($Y=0$) and does ($Y=1$) develop some form of cancer. 
+
+
+
+```{r, eval=FALSE}
+set.seed(13)
+### need to reset this when considering other sample sizes
+
+n_samp <- 1000
+
+
+### Cross-sectional sampling strategy
+  smp <- sample(1:62020, size=n_samp, replace=F)
+  dat.cs <- plsmd.pop[smp,]
+
+
+### Case-control sampling strategy
+  smp <- c(sample((1:62020)[plsmd.pop$Y==0],size=n_samp/2, replace=F),
+           sample((1:62020)[plsmd.pop$Y==1],size=n_samp/2, replace=F))
+  dat.cc <- plsmd.pop[smp,]         
+
+### Cohort sampling strategy
+smp <- c(sample((1:62020)[plsmd.pop$X=="Type B"],size=n_samp/2, 
+                replace=F),
+         sample((1:62020)[plsmd.pop$X=="Type A"],size=n_samp/2, 
+                replace=F))
+dat.co <- plsmd.pop[smp,]         
+
+```
+
+
+![d1](design_1.jpg) 
+
+
+### Case-control studies 
+
+If $Y=1$ is relatively rare, oversampling cases (and undersampling controls) relative to their natural frequency is a winning strategy (in terms of SE relative to sample size). And in fact we have some math intuition. Forget about confounding variables for a moment, and think about the SE for the log odds ratio coming from a 2 by 2 $(X,Y)$ data table. It is similar to oversampling/undersampling. 
+
+
+**"free pass" to fit a logistic regression of $Y$ on $(X,C)$ to data obtained via case-control sampling ** 
+
+- Think about $(Y,X,C)$ in the actual population of interest. And presume $(Y|X,C)$ in this population is governed by a logistic regression equation. 
+- Create a new population by "cloning cases and uncloning controls."  Can prove mathematically that **nearly the same** logistic regression equation governs $(Y|X,C)$ in this new population. 
+  - Imporantly, "nearly the same" means **all coefficients identical, except the intercept** (because we've changed the population average). 
+- **Caveat: can't interpret the estimated intercept in a meaningful way.** 
+- **In general**: Statistical analysis should be reflective of how data were collected, *unless you have a mathematical free pass like the one above*. 
+
+Perhaps a rough rule of thumb: ending up with more than a 4:1 or 5:1 ratio of controls to cases is likely inefficient (in a non-statistical sense). 
+
+
+### Matched Case-control studies 
+
+- Case controls are matched on confounders. Basically, case control by unique combination of confounders. 
+- And one intro stat analogy: t-test procedures for two independent samples versus paired samples are quite different. Ditto for **unmatched** and **matched** case-control studies. 
+- In general, if you form matched case-control pairs using confounders $C_1,\ldots,C_p$, then there is a bespoke procedure for estimating log-OR of $(Y,X|C_1,\ldots C_p)$ 
+- **No free pass this time!** 
+- Additionally, the procedure is not obvious. Each **pair** contributes to one of the four cells in the following table, $Z$-test based on *discordant* pairs. 
+- If the confounders strongly influence $Y$, matched can be more efficient than unmatched. 
+
+
+|  |  | Control |  |
+| --- | --- | --- | --- |
+|  |  | $X=0$ | $X=1$ |
+| **Case** | $X=0$ | | $n_{0,1}$ |
+| | $X=1$ | $n_{1,0}$  | |
+
+
+
+
+$\hat{z}_{\text{log-OR}} = \frac{\log(n_{1,0}) - \log(n_{0,1})}{\sqrt{\frac{1}{n_{1,0}} + \frac{1}{n_{0,1}}}}$
+
+
+
+![cc1](CC_matching_1.jpg) 
+
+
+## Design Summary 
+
+Randomized versus observational studies. 
+
+Randomized studies can be designed different ways: 
+
+- randomize only 
+- block then randomize 
+
+Observational studies can be designed different ways: 
+
+- cross-sectional 
+- cohort 
+- case-control 
+  - unmatched 
+  - matched 
+
+Generally, data analysis and interpretation needs to acknowledge the study design. 
+
+
+
+###  Accuracy versus Precision in the observational study context 
+
+When the goal is to learn the *causal* relationship between $X$ and $Y$ from an observational study: 
+
+-  Generally sample size and data acquisition scheme will govern **precision**. 
+-  Generally the extent to which all confounding variables are *recorded and used* will govern **accuracy**. 
+
+
+
+### Causal interpretations: It's all about making "proper" comparisons 
+
+- That is, it should be proper to compare an $X=0$ group of people to an $X=1$ group of people (in terms of average $Y$, say). 
+- One sense of proper: **homogeneity** - everyone in both groups is very similar to each other (apart from $X$). E.g. matching confounders leads to interpreting impact of one variable on another. 
+- Another sense of proper: **balance**  - the distribution of traits in each group is very similar. E.g. Randomization assumes all the confounder combinations are present in both groups so that causal inference can be drawn. 
+- Randomization can lead to an airtight case that X has a causal infuence on Y. Whereas with observational studies, we can try our best to identify/collect/use confounding variables. 
+
+
+
+
+### Instrumental variables
+
+**Problems**: 
+
+- Unobserved confounders 
+- 'Reverse causation' / causation in both directions 
+  - Price and demand is the classic example 
+    
+
+**Instrumental variable** (or "instrument"): Correlated with $X$, only affects $Y$ *through* $X$ (and not vice-versa). 
+    
+
+**Example**: $X$ = smoking, $Y$ = some measure of health  
+
+- Lots of potential confounders, possibly causation in both directions 
+- Instrument: Tax rate on cigarettes 
+
+
+**Example**: $X$ = demand for electricity, $Y$ = price of electricity 
+
+- Causation in both directions 
+- Instrument: temperature 
+
+**Further reading**: 
+
+- https://www.aeaweb.org/articles?id=10.1257/jep.15.4.69 
+
+
+### Causal inference in machine learning 
+
+ML methods for causal inference **and** using causal reasoning for better ML/AI methods. **Very** active area of research 
+
+**Further reading**: 
+
+- Pearl, The Seven Tools of Causal Inference, with Reflections on Machine Learning:  https://cacm.acm.org/magazines/2019/3/234929-the-seven-tools-of-causal-inference-with-reflections-on-machine-learning/fulltext 
+- Schölkopf, Causality for Machine Learning: https://arxiv.org/abs/1911.10500 
+- Section 6 of Athey and Imbens, Machine Learning Methods Economists Should Know About: https://arxiv.org/abs/1903.10075 
+- Special section in the latest issue of *Biostatistics*: https://academic.oup.com/biostatistics/issue/21/2 
+
+- [Must Read](https://online.stat.psu.edu/stat507/node/48/) 
+- [OpenIntro Stats](https://drive.google.com/file/d/0B-DHaDEbiOGkc1RycUtIcUtIelE/view) 
+- [Stopping Early](https://www.statisticsdonewrong.com/regression.html) 

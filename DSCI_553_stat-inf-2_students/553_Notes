@@ -1,0 +1,56 @@
+
+
+credible interval is just an analog of conf interval. 
+
+When we use recursive inference then the condional will have intersection of 2 events I think
+
+
+bottle cap should land with centre of mass at a lower height because of lower ptential energy
+
+
+Is JAGS doing something like bootstraping from getting the marginal. 
+
+
+
+if a, b in the beta distribution is a high number then we sasy that we have observed more examples. so it is more confident in prior
+
+
+#Don't change the seed value!
+np.random.seed(1)
+
+# Fill in the ...:
+jags_code = '''
+model{
+   a ~ dnorm(0, 100)
+   b ~ dnorm(300, 1e3)
+   c ~ dnorm(0, 1)
+   for (i in 1:N){
+       Y ~ dnorm(a*(x[i]-1974)+c*(x[i]-1974)**2 + b, 1)         
+   }
+}
+'''
+
+jags_data = {
+   'x': data.decimal.values,
+   'Y': data.ppm.values,
+   'N': data.shape[0]
+}
+
+# YOUR CODE HERE
+# raise NotImplementedError()
+
+N_samples = 10000
+N_skip = 10
+model = pjs.Model(code = jags_code, data = jags_data, chains = 1, adapt=N_samples)
+samples = model.sample(N_samples, vars=['a', 'b', 'c'], thin=N_skip)
+
+# extract the sample sets for a, b, and rho
+a_samps = samples['a'].flatten()
+b_samps = samples['b'].flatten()
+c_samps = samples['c'].flatten()
+
+
+
+
+
+

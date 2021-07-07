@@ -1,0 +1,998 @@
+creating the set takes longer than creating the list. However, as we can see, it's still fast.
+
+# Shuffles the list
+    np.random.shuffle(x)
+
+Finding whether a number is in a list.
+    Answer:  𝑂(𝑛) 
+Finding whether a number is in a set.
+    Answer:  𝑂(1)  (more on this next week)
+Sorting with my code.
+    Answer:  𝑂(𝑛2) 
+Sorting with sort.
+    Answer:  𝑂(𝑛log𝑛)  (more on this next week)
+Doubling with a loop.
+    Answer:  𝑂(𝑛) 
+Doubling with numpy.
+    Answer:  𝑂(𝑛)
+
+
+With time complexity, we tend to think more about the algorithms.
+With space complexity, we tend to think more about the data structures.
+
+
+
+
+Linear search and binary search
+
+    Binary search: If the list is already sorted, we can search much faster with binary search. We start in the middle and can just restrict ourselves to searching half the list after a comparison.
+
+    def search_sorted(data, key):    
+        low = 0
+        high = len(data) - 1
+        while (low <= high):
+            mid = (high + low)//2
+            if data[mid] == key:
+                return True
+            if key < data[mid]:
+                high = mid - 1
+            else:
+                low = mid + 1
+        return False
+
+    The time complexity of the search_sorted function is  𝑂(log𝑛)  because in the worst case, the function loops over  log𝑛  elements, as the search space reduces by half in each iteration of the loop.
+
+
+Insertion Sort
+    def insertion_sort(x):
+        n = len(x)
+
+        for i in range(n):
+            # Get the index of the smallest value from location i onward
+            min_ind = np.argmin(x[i:]) + i
+
+            # Swap this with element i
+            x[i], x[min_ind] = x[min_ind], x[i]
+        return x
+
+
+    time complexity: 𝑂(𝑛2) . argmin itself takes 𝑂(𝑛), and this is called 𝑛 times, for a total of 𝑂(𝑛2). The actual number of steps is more like 𝑛2/2.
+
+
+Q: could we find a sorting algorithm that takes  log(𝑛)  time?
+    A: no way, because it takes  𝑛  steps to even inspect every element of the input! The real answer is that the best sorting algorithms are  𝑛log(𝑛)  time. This is close enough to  𝑂(𝑛)  that we should be very happy with the result.
+
+
+Time complexity of Merge Sort is O(nLogn) as merge sort always divides the array into two halves and take linear time to merge two halves.
+
+
+
+## Hashing
+
+    hash function maps from an object to an integer.
+    hash function returns an integer. 
+    hash function of a Python integer is itself. Or at least small enough integers.
+
+    Python's set type supports the following operations in  𝑂(1)  time:
+        inserting a new element
+        deleting an element
+        checking if an element is present
+
+
+    If a Python set is a hash table, that means items in it must be hashable (dict has the same requirement, for keys):
+        lists are not hashable
+        Typically, mutable objects are not hashable.
+
+
+    - The hash function depends on the array size.
+    - There's also an issue of collisions: when two different objects hash to the same place.
+    - Roughly speaking, we can insert, retrieve, and delete things in $O(1)$ time so long as we have a "good" hash function.
+    - The hash function will be "good" for default Python objects, and if you end up needing to implement your own one day you should read a bit more about it.
+
+    The hash function has a random seed that is set at the start of every Python session
+
+
+
+Python dict
+    It is also implemented as a hash table, meaning you can expect  𝑂(1)  operations.
+    Only the keys are hashed, so only the keys have to be hashable.
+        A list can be a value, but not a key.
+
+
+
+Linked Lists
+    See the figures of singly linked list, doubly linked list
+    https://en.wikipedia.org/wiki/Linked_list
+
+
+
+Trees
+    - Trees are recursive data structures, like the linked lists above.
+    - Tree terminology:
+        - A tree is either empty or a node with zero or more children that are themselves trees (or "subtrees").
+        - If  𝑋  is the child of  𝑌 , then  𝑌  is the parent of  𝑋  (e.g. Captain A is a child of Colonel B; Colonel B is the parent of Captain A).
+        - The root is the only node without a parent (e.g. General).
+        - A leaf is a node that does not have children (e.g. Private A).
+        - An internal node is a node that is not a leaf (e.g. Captain A).
+        - The height of the tree is the largest number of edges connecting the root to a leaf
+
+    Binary trees (BTs)
+        A binary tree is a tree where each node has at most 2 children. So each tree node will have a label and two children. Each BinaryTree stores two BinaryTrees
+
+    Binary search trees (BSTs)
+        A binary tree is a binary search tree if, for all nodes, all keys in its left subtree are smaller than its key, and all keys in its right subtree are larger than its key.
+
+        Computational complexity:
+            - Binary search trees (BSTs) can be slow if they become very unbalanced (think of adding numbers in increasing order).
+            - Industrial strength implementations stay balanced and are still efficient.
+            - But the take-home message is that search/insert/delete all run in  𝑂(log𝑛)  time, which is pretty fast.
+
+
+
+
+
+𝑘 -d trees
+    Finding a nearest neighbor of k-dimensional point is O(nk)
+
+    One of the classic ways to speed up nearest neighbours is a data structure call the  𝑘 -d tree.
+    (Optional) Warning: the use of the letter  𝑘  here is a bit unfortunate.
+        In future machine learning courses, we'll use  𝑑  instead of  𝑘 .
+        This will also help avoid confusion with  𝑘 -nearest neighbours, which is a totally different  𝑘 .
+        But I do understand not wanting to call them  𝑑 -d trees... so we'll use  𝑘  for today.
+
+
+    Basic idea:
+        - In each recursive step, there is a certain number of datapoints. If there's only one, we're done.
+        - Otherwise, for one of the two dimensions (we alternate back and forth), find the median value along the dimension.
+        - Split the data into two subsets based on being above or below that median, and build a (sub)tree for each of those subsets.
+        - Starting from the full dataset, you will create a tree where each leaf is a datapoint.
+        - You can find an approximate nearest neighbour by traversing the down the tree using the same decision points as were used to original split the data; the final leaf is the desired neighbour.
+
+    - sklearn.neighbors.KDTree
+    - However,  𝑘 -d trees get slow when the number of dimensions is large.
+
+
+
+
+
+Amortization
+    This reflects a general phenomenon in algorithms: doing a lot of work up front to save time later.
+    We saw this earlier with sorting a list and then doing binary search multiple times.
+        We say the up-front effort is amortized (or spread out) over the many queries.
+
+
+
+Graphs
+    A graph consists of:
+        A set of vertices or nodes
+        A set of pairs of vertices, called edges
+
+    - The degree of a vertex is the number of edges connected to it.
+    - A graph is complete if every pair of vertices is joined by an edge
+
+    # The graph package we're using, networkx, randomly visalizes the graph each time.
+    import networkx as nx  # pip install networkx
+
+    G = nx.Graph()
+    G.add_node("A")
+    G.add_node("B")
+    G.add_node("C")
+
+    G.add_edge("A", "B")
+    G.add_edge("B", "C")
+
+    draw_params = {"node_color" : "pink", "font_size" : 20, "with_labels" : True, "arrowsize" : 30}
+    nx.draw(G, **draw_params, pos=nx.spring_layout(G, seed=5))
+
+    # Complete graph
+    complete = nx.complete_graph(4)
+    nx.draw(complete, **draw_params)
+
+    # Directed graph
+    # Directed graphs can also have reciprocal connections:
+    G = nx.DiGraph()
+
+    G.add_node("A")
+    G.add_node("C")
+
+    G.add_edge("C", "A")
+    G.add_edge("A", "C")
+
+
+    Weighted graphs
+        Both undirected and directed graphs can have weighted edges.
+        Flights between airports: weights can be cost or flight time between destinations.
+        Countries: trade/immigration in each direction (directed).
+
+        G = nx.Graph()
+
+        G.add_node("A")
+        G.add_node("B")
+        G.add_node("C")
+
+        G.add_edge("A", "B", weight=2.0)
+        G.add_edge("B", "C", weight=5.0)
+        G.add_edge("C", "A", weight=2.5)
+
+    Adjacency list
+        Space complexity: 𝑂(𝐸)
+        We can represent the graph as an adjacency list. It lists all pairs of vertices that are connected
+    Adjacency matrix
+        Space complexity: 𝑂(V^2)
+        This matrix has size # vertices x # vertices
+            This representation is often nice. For example we can check if any two nodes  𝑖  and  𝑗  are connected in  𝑂(1)  time
+        In the worst case of a complete graph, then  𝐸=𝑂(𝑉^2)  and the two are about the same.
+
+
+Sparse matrices
+    Sparse matrices are conceptual data structure like a list, dictionary, set, etc.
+    scipy.sparse matrices are the Python implementation of this conceptual data structure, like list, dict, set, etc.
+    looping through the rows of a csr_matrix isn't that bad. However, looping through the columns of a csr_matrix is a disaster
+
+
+
+
+Python generators
+    Imagine you have access to a stream of data, which you can process one bit at a time.
+    Imagine the overall data set is too large to fit into memory (space complexity!).
+
+    def numbers_generator(n):
+        for i in range(1, n):
+            yield 1/i  # this is what makes it a generator
+
+    nums = numbers_generator(4)
+    nums
+    result = next(nums)
+
+
+    - The generator is a function that "remembers where it was" when you last called it.
+    - It "yields" the data one at a time.
+    - next is a Python keyword that works for all generators.
+
+    - You can also use generators in for loops, very conveniently:
+        total = 0
+        for num in numbers_generator(10):
+            total += num
+        print(total)
+
+    - Generator Comprehension
+        A comprehension with parentheses isn't a tuple comprehension, it is actually a generator. 
+        nums_gen = (1/i for i in range(1,10))
+
+
+
+
+
+
+
+
+
+
+Stacks & Queues
+
+    - A stack does with with the "last in, first out" (LIFO) mentality - like a stack of books or plates.
+        - Depth first search, backtracking
+        - every node stores pointer to only 1 child node, that is why they need less space than BFS
+    - Queues, which use "first in, first out" (FIFO) ordering
+        - Breadth first search, no backtracking 
+        - every node stores pointer to all its children, that is why it requires more space
+        - BFS is used to find shortest point between 2 points in a graph
+
+
+
+
+
+
+
+
+
+
+
+Optimization
+
+    Discrete optimization refers to optimization where the variables are discrete (as opposed to continuous).
+
+    There are many ways to go about solving an optimization problem. In general, one possibility is brute force in which all possible inputs are considered.
+
+    The hard part about optimization is often in finding clever ways to solve the problem faster, that still give the correct solution.
+
+    The other hard part can be coverting a conceptual idea into the right mathematical form as an optimization problem. This is called formulating the problem.
+
+    To specify an optimization problem, we need to specify a few things:
+        - A specification of the space of possible inputs.
+        - An objective function which takes an input and computes a score.
+        - A set of _constraints_, which take an input and return true/false.
+        - Are we maximizing or minimizing?
+
+
+    The constrained optimum can be equal to, or worse than, the unconstrained optimum
+
+    Example: TA Assignment
+        Goal: match TAs to courses so that our staffing needs are covered in the best way possible.
+        Here are the constraints:
+            Each course should be assigned exactly 2 TAs.
+                For all courses  𝑗 , we require  ∑𝑖 𝑥𝑖𝑗=2
+            A TA can only cover one course at a time (i.e., in a given block).
+                For all TAs  𝑖 , for all blocks  𝐵 , we require  ∑𝑗∈𝐵 𝑥𝑖𝑗≤1
+            A TA can only be assigned to a course they have listed as "can teach" or "enthusiastic to teach".
+                For all  𝑖,𝑗  such that canteach (𝑖,𝑗)  is false and enthusiastic(𝑖,𝑗)  is false,  𝑥𝑖𝑗=0
+            To cover a course, the TA must be available for one of the two lab days (for simplicity - this does not quite guarantee lab coverage).
+                For all  𝑖,𝑗  such that available (𝑖,day1(𝑗))  is false and available (𝑖,day2(𝑗))  is false,  𝑥𝑖𝑗=0
+
+        Objective: We want to maximize the number of assigned courses that TAs are enthusiastic about.
+            We want to maximize the following objective: for all  𝑖,𝑗  such that enthusiastic (𝑖,𝑗)  is true,  ∑𝑖𝑗 𝑥𝑖𝑗
+            Or maximize  ∑𝑖𝑗 enthusiastic(𝑖,𝑗)*𝑥𝑖𝑗
+
+        Let  𝑥𝑖𝑗  be  1  if TA  𝑖  is assigned to course  𝑗 , and 0 otherwise.
+
+    TAs = ['Alice', 'Bob', 'Carol', 'Chuck', 'Dan', 'Erin', 'Faith', 'Grace', 'Heidi', 'Ivan']
+    courses = [511, 521, 542, 551, 512, 523, 531, 552, 513, 561, 571, 532]
+    blocks = {1, 2, 3}
+
+    prob = pulp.LpProblem("TA assignments", pulp.LpMaximize)
+    x = pulp.LpVariable.dicts("x", (TAs, courses), 0, 1, pulp.LpInteger) 
+
+    # in PuLP we use the += syntax to add a new constraint to the optimization problem. No code to solve the optimization problem is actually been run here. Rather, PuLP is using the syntax of python to allow the user to specify the problem over multiple lines of code.
+
+    # Also, you can think of pulp.lpSum as the same as sum or np.sum. However, it's not doing the summing now, like we usually do with python code. It's just a way of communicating the math of the optimization problem.
+
+        for course in courses:
+            prob += ( pulp.lpSum(x[TA][course] for TA in TAs) == TAS_PER_COURSE )
+        print(prob)
+
+        for TA in TAs:
+            for block in blocks:
+                courses_in_block = courses_df.query("block == @block").index # DSCI 523 FTW!
+                prob += pulp.lpSum(x[TA][course] for course in courses_in_block) <= 1
+
+        for TA in TAs:
+            for course in courses:
+                if course not in TAs_df.loc[TA,"can_teach"] and course not in TAs_df.loc[TA,"enthusiastic"]:
+                    prob += ( x[TA][course] == 0 )
+
+
+        for TA in TAs:
+            for course in courses:
+                if courses_df.loc[course,"lab_days"][0] not in TAs_df.loc[TA]["availability"] and \
+                   courses_df.loc[course,"lab_days"][1] not in TAs_df.loc[TA]["availability"]:
+                    prob += x[TA][course] == 0
+
+        # Specifying the objective function in different ways
+        prob += pulp.lpSum(x[TA][course] for TA in TAs for course in courses if course in TAs_df.loc[TA,"enthusiastic"])
+
+        objective_terms = list()
+        for TA in TAs:
+            for course in courses:
+                if course in TAs_df.loc[TA,"enthusiastic"]:
+                    objective_terms.append(x[TA][course])
+        prob += pulp.lpSum(objective_terms)
+
+        prob.solve()
+        pulp.LpStatus[prob.status]
+        print("We have %d enthusiastic courses out of a possible %d." % 
+              (pulp.value(prob.objective), len(courses)*TAS_PER_COURSE))
+
+
+    FYI that the term "linear programing" (LP) usually refers to the case where the decision variables ( 𝑥 ) are continuous; what we did with discrete  𝑥  is called integer linear programming (ILP).
+
+    There is a technical definition of linear optimization problems, but in short the objective and constraints must be linear functions of the inputs.
+
+    The algorithms under the hood are very different, but from your perspective the interface with PuLP is the same whether the variables are continuous or discrete.
+
+    In general, if your optimization problem falls into a more restrictive class of problems, there are probably tools to solve them faster.
+
+
+
+
+
+Caching & Memoization
+
+- Consider the Fibonacci sequence, The first two numbers are  𝐹0=0  and  𝐹1=1 . For the rest,  𝐹𝑛=𝐹𝑛−1+𝐹𝑛−2
+
+# Repeated computations of the same thing
+def fib_rec(n):
+    if n == 0 or n == 1:
+        return n
+    return fib_rec(n-1) + fib_rec(n-2)
+
+
+- The general term caching refers to storing things for later. Caching is a more general term
+- Memoization is a specific form of caching that involves caching the return value of a function based on its parameters. Memoization in Python is called cache
+
+#  we're remembering the results of calls to fib_rec. we only call fib_rec(n) once for each n. It's a tradeoff of more memory usage for faster running time.
+@functools.lru_cache(maxsize=None)
+def fib_rec_cache(n):
+    if n == 0 or n == 1:
+        return n
+    return fib_rec_cache(n-1) + fib_rec_cache(n-2)
+
+
+`functools.lru_cache` stored the cache in memory. We can use `joblib` to store the cache in a file.
+
+memory = joblib.Memory("/tmp", verbose=0)
+@memory.cache
+def fib_rec_cache2(n):
+    if n == 0 or n == 1:
+        return n
+    return fib_rec_cache2(n-1) + fib_rec_cache2(n-2)
+
+
+Dynamic programming
+
+    Appliction: diffs between strings. When you look at a commit in GitHub, you just see the "diff" or difference between the two versions.
+
+    What we are doing implicitly is aligning the two sequences. We want an alignment with the minimal changes that go from  𝑥  to  𝑦 , i.e. we want to minimize the number of highlighted characters.
+
+    Dynamic programming is an algorithm for solving certain optimization problems. It only works for some problems, but when it works it is FAST. This is just like linear programming (last lecture), except for a different set of problems. It is closely related to memoization; 
+
+
+    Dynamic programming has a lot of applications:
+        DNA sequence alignment
+        Text hyphenation
+        Running certain machine learning models (e.g. hidden Markov models)
+        Finding the differences between two files (this!)
+        Image resizing (this week's lab!)
+
+        # It is basically the recursive solution + memoization, but implemented deliberately.
+        def num_diffs(x, y, return_table=False):
+            """
+            Compute the number of highlighted characters in the
+            diff between x and y using dynamic programming.
+            
+            Parameters
+            ----------
+            x : str
+                The first string
+            y : str
+                The second string
+                
+            Returns
+            -------
+            numpy.ndarray
+                The dynamic programming table. 
+                The last element is the result.
+                
+            Examples
+            --------
+            >>> num_diffs("This is a!", "this  is a")[-1,-1]
+            4
+            >>> num_diffs("xxHello", "Hellox")[-1,-1]
+            3
+            """   
+            M = len(x)
+            N = len(y)
+            
+            opt = np.zeros((M+1, N+1), dtype=int)
+            opt[:,0] = np.arange(M+1)
+            opt[0,:] = np.arange(N+1)
+            
+            for i in range(1,M+1):
+                for j in range(1,N+1):
+                    if x[i-1] == y[j-1]:
+                        opt[i,j] = opt[i-1, j-1]
+                    else:
+                        opt[i,j] = 1 + min( opt[i-1,j], opt[i,j-1] )
+
+            return opt if return_table else opt[-1,-1]
+
+        - We defined a 2D array which we called `opt`. 
+        - `opt[i,j]` contains `num_diffs(x[:i], y[:j])`, that is the solution for the $(i,j)$ subproblem
+        - The key logic is as follows:
+          - If `x[i]` equals `y[j]`, then `opt[i,j]` equals `opt[i-1,j-1]`
+            - Because we don't add any additional highlights by adding that next character!
+          - If they are not equal, then there are two possibilities: highlight in $x$ or highlight in $y$
+            - We want the **better** of those two possibilities.
+            - Good news is, we already know how good they are! This is the subproblem part.
+          - This is how we build up the solution iteratively instead of repeating computation.
+
+        Computational cost¶
+            Now we know how much it costs to compute this:
+                Memory usage is  𝑂(𝑀𝑁) 
+                Runtime is also  𝑂(𝑀𝑁) 
+                (where  𝑀  is the length of  𝑥  and  𝑁  is the length of  𝑦 )
+
+
+    #### When can we use dynamic programming?
+
+    - When can we use dynamic programming? 
+      - Sequential decision-making: one can make an optimal decision by taking the optimal solution to a subproblem, and looking only at the next step.
+    - Can we use dynamic programming to solve our MDS TA assignment problem?
+      - No: if we have assigned 5 TAs optimally, we cannot just assign the 6th TA optimally without looking at the rest of the TA pool. 
+    - Why could we use dynamic programaming to find the diffs between documents?
+      - This comes back to the discussion of how `opt` is computed.
+      - The optimal solution at a given step can be described in terms of optimal solutions of subproblems.
+
+
+
+## Vectorization
+
+    This has to do with the Python language being interpreted rather than compiled
+
+    Note: R is also interpreted.
+
+    Numpy has some super-optimized code under the hood, for common operations like vector addition
+
+    Faster algorithms vs. faster implementations
+        Sometimes we can speed up our code using a faster _algorithm_, like dynamic programming.
+            This usually means that it's actually different in big O, or the number of operations.
+        Other times we speed it up using a faster _implementation_, like vectorization.
+            More of these approaches coming below.
+
+
+## Profiling
+
+- Profiling means measuring how long parts of your code takes.
+- Profiling is useful when your code is slow but you don't know which parts.
+- "Premature optimization is the root of all evil" -Donald Knuth
+- We'll use SnakeViz for this.
+
+    %%snakeviz -t 
+
+    # Note: -t is to open in new tab which is necessary in JupyterLab (thanks to Joel Ostblom for this tip)
+
+    X = np.random.rand(1000,20)
+    Y = np.random.rand(200,20)
+
+    dist = pairwise_squared_distances_broadcast(X,Y)
+
+
+
+
+Numba
+    "Numba is an open source JIT compiler that translates a subset of Python and NumPy code into fast machine code."
+        "JIT compiler" = Just-in-time compiler.
+        It sees a loop and figures out that it's actually vector addition, right before the loop is executed (hence "just in time").
+        This is the easiest to deploy, because you don't need to change your code - just add a decorator.
+
+        n = 10**7
+        x = np.zeros(n)
+        y = np.zeros(n)
+
+        @njit
+        def run_code(n, x, y):
+            for i in range(n):
+                y[i] = x[i] + 1
+
+    - Note: with the `@` we're again using a decorator, like we did with the caching at the start of class.
+    - This is rather confusing because `@` can also denote matrix multiplication...
+
+
+Cython
+    - [Cython](https://cython.org/) allows the user to leverage the increased speed of C within Python.
+    - You can call C routines.
+    - You actually compile your Cython code - it is not interpreted.
+
+
+
+
+PyPy
+    - [PyPy](https://pypy.org/) is an implementation of Python in Python.
+      - The original Python, or CPython, is written in C.
+      - PyPy has several advantages including a just-in-time compiler which might make your code run faster.
+    - You can install PyPy and run your code with `pypy test.py` instead of `python test.py`.
+      - You don't need to change your code, BUT some libraries may not work with PyPy. Things like numpy do work. For more info, see [here](https://pypy.org/compat.html).
+
+    Note! This has nothing to do with [PyPI](https://pypi.org/), which is the package index, like [CRAN](https://cran.r-project.org/) for R. 
+
+
+
+Parallelization
+
+
+    Hardware for parallelization
+
+        import multiprocessing
+        multiprocessing.cpu_count()
+
+        My laptop has 4 cores.
+        I should theoretically be able to use them to run the code in parallel and achieve (close to) a 4x speedup.
+        Recently, GPUs have become extremely popular for parallel computing, especially in deep learning.
+
+    Software for parallelization
+
+        Numba can do some of this:
+
+        n = 50_000_000
+        x = np.zeros(n)
+        y = np.zeros(n)
+
+        @njit(parallel=True)
+        def run_code_parallel(n, x, y):
+            for i in prange(n):
+                y[i] = x[i] + np.random.rand()
+
+
+    Parallel vs. distributed
+        Parallel computing can happen even on one machine, e.g. my 4 cores
+        Distributed computing means sharing the computation across machines
+
+
+
+
+
+
+
+
+
+
+
+%timeit is an ipython command not python
+
+np.min is the numpy version of the min and these functions have advantages over base functions
+
+np.argmin gives index of min
+
+
+T/F
+	3.
+		If n is small a lot of other factors come into picture....cant ignore other terms hence possibly it will not double
+
+
+
+
+
+
+What is hashability
+	mike says list cannot be hashed as a key in a dictionary
+		https://wiki.python.org/moin/DictionaryKeys
+
+
+
+
+from collections import defaultdict, Counter
+#d=defaultdict(int)
+
+
+
+
+
+
+data_url = 'http://www.gutenberg.org/cache/epub/60515/pg60515.txt'
+new_corpus = urllib.request.urlopen(data_url).read().decode("utf-8")
+new_corpus = new_corpus[1325:]
+
+
+mm = MarkovModel(n=8)
+mm.fit(new_corpus)
+print(mm.generate(300))
+
+
+"The large horse plodded slowly as if
+trying to draw strength left him. His should be home.
+
+Slowly his eyelids yielded. His body was a silent graveyard,
+littered with his wife in the shadows on th"
+
+
+
+
+
+
+
+
+
+argmax gives the index of the largest element
+	there must be other arg arguments that gives index
+
+
+python generators are mainly used for space efficieny, in case of large list of things it gives one thing at a time
+works similar to lists in for loop
+
+you can force generators, range, map to give it a list
+map can take generator instead of a list in general
+
+
+
+
+
+
+
+
+
+
+
+class Stack:
+    def __init__(self):
+        self.data = list()
+
+    def push(self, item):
+        self.data.append(item)
+
+    def pop(self):
+        return self.data.pop()
+
+    def isEmpty(self):
+        return len(self.data) == 0
+    
+    def __str__(self):
+        return self.data.__str__()
+
+
+
+class Queue:    
+    def __init__(self):
+        self.data = list()
+
+    def push(self, item):
+        
+        self.data.append(item)
+
+    def pop(self):
+        return self.data.pop(0)
+
+    def isEmpty(self):
+        return len(self.data) == 0
+    
+    def __str__(self):
+        return self.data.__str__()
+
+
+def connected(g, node1, node2, visited=None, verbose=False):
+    if visited is None:
+        visited = {node1}  # initialize
+
+    if node1 == node2:
+        return True
+
+    # for all the unvisited neighbours of node1
+    for v in g.neighbors(node1):
+        if v in visited:
+            continue
+
+        visited.add(v)
+
+        if verbose:
+            print("At node", v)
+
+        # If a connection found, passes the True value all the way up to the top level.
+        if connected(g, v, node2, visited, verbose):
+            return True
+
+    return False
+
+
+
+def connected_bfs(g, node1, node2, verbose=False):    
+    q = Stack()
+    q.push(node1)
+
+    visited = set()
+
+    while not q.isEmpty():
+        vertex = q.pop()
+        if vertex == node2:
+            return True
+
+        if vertex in visited:
+            continue
+
+        visited.add(vertex)
+
+        if verbose:
+            print("At node", vertex)
+
+        for v in g.neighbors(vertex):
+            if v not in visited:
+                # TODO: no need to add if already in queue?
+                q.push(v)
+
+    return False
+
+# The beauty is that to turn this into DFS, we only need to change the Queue to a Stack
+# nx.shortest_path_length(erg, 0, 14)
+	# This means it takes  2  hops to get from node  0  to node  14 .
+
+
+Simulated PageRank with Monte Carlo, as follows:
+	- We start at some random node
+	- With probability  𝛼  choose a completely random node in the graph (this emulates the user going to a random new page); with probability  (1−𝛼)  choose a random neighbour of the current node (this emulates the user clicking on a link on the page).
+	- Repeat Step 2  𝑛  times.
+	- The ranking of each node is proportional to the number of times this random walk visits the node.
+
+
+
+
+
+
+def page_rank(G, alpha=0.1, iters=100000):
+    visited = Counter()
+
+    nodes = G.nodes()
+    current_node = np.random.choice(nodes)
+    for i in range(iters):
+        if np.random.random() < alpha:
+            current_node = np.random.choice(nodes)
+        else:
+            current_node = np.random.choice(list(G.neighbors(current_node)))
+        visited[current_node] += 1
+
+    return visited
+
+pr = page_rank(sfg)
+pr.most_common()
+
+# Some useful code
+num_neigh = {i: len(list(nx.reverse_view(sfg).neighbors(i)))
+             for i in sfg.nodes()}
+for node in sorted(num_neigh, key=num_neigh.get, reverse=True):
+    print("Node", node, "has", num_neigh[node], "incoming links")
+
+
+# edges of a graph
+	print(G.edges())
+
+adj = nx.adjacency_matrix(G).toarray()
+am = nx.adjacency_matrix(G)
+am.shape
+am.nnz
+
+i = 0
+print(am[i])
+
+x_sparse = scipy.sparse.csr_matrix(x)
+x_sparse[1, 2]
+row_1_sparse = x_sparse[1]
+row_1_sparse.shape
+
+
+# Vertex with most neighbours
+	ind = np.argmax(am.getnnz(axis=0))
+	val = np.max(am.getnnz(axis=0))
+	print("Vertex", ind, "has", val, "neighbours")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def largest_distance(g):
+    all_nodes = list(g.nodes())
+    x = pd.DataFrame({
+        "Node1": [],
+        "Node2": []
+    })
+
+    for node1 in all_nodes:
+        for node2 in all_nodes:
+            if node1!=node2:
+                y = pd.DataFrame({
+                    "Node1": [node1],
+                    "Node2": [node2]
+                })
+                x = pd.concat([x,y])
+
+    x['node_concat'] = np.where(x['Node1'] > x['Node2'], x['Node1'] + x['Node2'], x['Node2'] + x['Node1'])
+    xx = x.groupby('node_concat').first()
+    xx = xx.reset_index()
+
+    xx['Distance'] = np.asarray(list(map(lambda i: nx.shortest_path_length(g, xx.iloc[i,1], xx.iloc[i,2]), list(range(0, xx.shape[0], 1)))))
+    max_distance = np.max(xx.Distance)
+    result_data = xx[xx.Distance == max_distance]
+    result_data
+    max_dist_set = set([(result_data.iloc[row_num,1],result_data.iloc[row_num,2]) for row_num in list(range(0, result_data.shape[0], 1))])
+
+    return (max_distance, max_dist_set)
+
+
+
+
+
+
+
+
+
+
+
+alt.X('year', axis=alt.Axis(title="Year")),
+alt.Chart(my_data_frame).mark_bar().encode(alt.X("Degree", bin=alt.Bin(extent=[0, 300],step=10), axis=alt.Axis(title="Degrees (Groups of 10)")), y='count()')
+
+
+
+
+
+setting up the optimization problem 
+    == is to to check condition, meaning it has to be 0
+
+
+
+
+
+df['Date'].dt.year
+df['Date'].dt.month
+df['Date'].dt.day
+df['Date'].dt.hour
+df['Date'].dt.hour
+df['Date'].dt.minute
+df['Date'].dt.second
+
+
+pd.to_datetime(check_format_arg)
+
+
+
+
+
+
+
+
+
+
+conda update pandas
+    asks to update anaconda
+
+
+
+
+
+
+caching is really good...
+
+vectorization is awesome
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#!/bin/python3
+
+import math
+import os
+import random
+import re
+import sys
+
+
+#
+# Complete the 'calcMissing' function below.
+#
+# The function accepts STRING_ARRAY readings as parameter.
+#
+import numpy as np
+import pandas as pd
+
+def calcMissing(readings):
+    # Write your code here
+    x = np.array(list(map(lambda i: i.split('\t')[-1].split('_')[0], readings)))
+    # x = pd.Series(x)
+    y = pd.Series([None if i=='Missing' else float(i) for i in x])
+    y = y.rolling(10, min_periods=1).mean()
+    y = y[[i=='Missing' for i in x]]
+    for i in list(y.values):
+        print(i, file=sys.stdout)
+
+
+if __name__ == '__main__':
+

@@ -1,0 +1,668 @@
+
+http://econ.ucsb.edu/~doug/240a/The%20Discovery%20of%20Statistical%20Regression.htm
+https://rafalab.github.io/dsbook/regression.html
+https://leanpub.com/datasciencebook
+https://www.nytimes.com/2019/04/17/upshot/gun-research-is-suddenly-hot.html
+https://www.theanalysisfactor.com/when-dependent-variables-are-not-fit-for-glm-now-what/
+https://www.theanalysisfactor.com/interpreting-regression-coefficients/
+
+The analysis factor is a great site
+
+
+
+
+
+
+If Y & X are bivariate normal then the conditional expectation is a line
+	Now, to fit the regression line if both Y & X are normal then the bivariate is normal and hence conditional is normal
+
+
+Mathematics of regression
+	https://newonlinecourses.science.psu.edu/stat414/node/118/
+	https://www.le.ac.uk/users/dsgp1/COURSES/THIRDMET/MYLECTURES/1REGRESS.pdf
+
+
+you can use ; to suppress the output in jupyter
+
+
+
+
+
+
+When to regression tree and linear regression
+	https://datascience.stackexchange.com/questions/9159/when-to-choose-linear-regression-or-decision-tree-or-random-forest-regression
+
+Difference between estimation & prediction
+	https://stats.stackexchange.com/questions/17773/what-is-the-difference-between-estimation-and-prediction
+
+In linear regression why the response be continous
+	https://stats.stackexchange.com/questions/266932/in-linear-regression-why-does-the-response-variable-have-to-be-continuous
+
+
+
+
+In MLE you have to assume a distribution of the parameters...
+
+
+
+
+least square method doesnt make any distribution assumptions. Also, bootstrap 
+
+
+lm uses asymptotic theory
+
+
+
+
+
+
+
+estimate/std. error follows a t-distribution
+t-dist is very similar to normal with increase in dof t-dist becomes closer to the normal distribution
+
+
+generally we are not interested in the hypothesis test of the intercept(it generallky depends on the question)
+
+
+
+
+in the lm equation in can put multiply instead of addition of independent variables to get something about interaction variable...read about this
+
+
+augument is really cool
+
+
+
+[Must read:](http://www.utstat.toronto.edu/~brunner/books/LinearModelsWithR.pdf)
+
+
+Question-
+	In the summary of lm the statistic given is (estimate-0)/std.error but the null distribution in this case should be centered around mean and not necessarily have the same std dev as the sample itself whose mean is on the estimate. Are we making an assumption here that the null distribution will have the same std. dev as the sample itself
+
+
+
+
+
+
+Notes for quiz
+
+3 important aspects of Linear Model
+	- Estimation: how to estimate the true (but unknown) relation between the dependant and the independent variables
+	- Inference: how to use the model to infer information about the unknown relation between variables
+	- Prediction: how to use the model to predict the value of the dependent variable for new observations
+
+- The conditional expectation is the best predictor of  𝑌|𝑋
+- THe population is to the sample as the sample is to the bootstrap sample
+
+
+- Linear Regression usually refers to a linear model with only continuous predictors. A simple linear regression has only one continuous predictor. A multiple linear regression has more than one continuous predictor.
+- Linear Models is used in general for any linear combination of predictors of any type.
+- When the explanatory variable is categorical, we can reproduce the estimates of a t-test using `lm()`, even when there is not a linear representation between the variables
+- The lm function uses results from asymptotic theory to construct confidence intervals
+
+
+- The (unknown) conditional expectation has a linear form:  𝐸[𝑌|𝑋]=𝑎+𝑏𝑥 , known as the regression line: Galton proved that when  𝑌  and  𝑋  are bivariate normal (or multivariate normal): the conditional expectation is a line
+	-The true intercept  𝑎  and slope  𝑏  of the regression line are called regression parameters or coefficients. These parameters are unknown but not random (at least in the frequentist paradigm)
+	- The best estimate of the regression line is based on all points in the sample instead of a subsample
+	- We can check the linearity of the model by grouping the variable & looking at the conditional mean to check if 𝐸[𝑌|𝑋=𝑥]=𝑎+𝑏𝑥  seems reasonable
+	- In regression the error, 𝜀𝑖  is also Normal and 𝐸[𝜀𝑖|𝑥𝑖]=0
+    - $H_0: a = 0$ (null) *vs* $H_1: a \neq 0$ (default alternative)
+    - $H_0: b = 0$ (null) *vs* $H_1: b \neq 0$ (default alternative)
+    - In case of categorical variable. number of (distinct categories -1) dummy variables are created and when all the dummy variables are 0, the intercept is the estiamte of that one category left and the estimates of the dummy variables is the effect of that category on the dependent variable relative to the intercept.
+    - test statistic=(statistic-parameter)/(standard error of the statistic)
+    - Mathematical result: if the conditional distribution of the error terms  𝜀𝑖  is Normal and estimating the  𝑆𝐸(𝑏̂ ) , the statistics  𝑡  (𝑡=𝑏̂ /𝑆𝐸(𝑏̂ )) follows a  𝑡 -distribution with  𝑛−𝑝  degrees of freedom (df), where  𝑛  is the sample size and  𝑝  the number of parameters (in our case  𝑝=2 ).
+
+
+
+- Estimated regression line  (𝑌−𝜇𝑌)/𝜎𝑌=𝜌((𝑋−𝜇𝑋)/𝜎𝑋) , where  𝜌  is the correlation  𝑐𝑜𝑟(𝑌,𝑋)
+
+
+
+In real application, you usually assume a linear model to predict the response given information on other variables without necessarily assuming normality but that means that your prediction may not be the best one!! sure! but at least you know which one is the best among other linear predictors
+
+
+GGPAIRS is awesome
+dat_s %>% select(assess_val, BLDG_METRE,age) %>% 
+    ggpairs()
+
+
+In Multiple linear regression (MLR) we estimate coef by keeping other variables constant. But is it reasonable to assume the that slope does not depend on the value being held constant. In case variables are independent this can work but not otherwise
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nested models are useful for studying the impact of adding a variable or not
+
+
+interaction models is similar if we divide data and run seperate model
+
+
+
+for decomposition rule to hold there should be an intercept & it has to be least squares
+
+
+make_blob kis awesome
+
+
+
+
+
+
+
+
+# testing if scikit learn has automatic encoding of categorical variables
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+mydata = pd.read_csv('C:/MyDisk/MDS/DSCI_561/DSCI_561_lab3_sverma92/sleep_data.csv')
+
+mdl = LinearRegression().fit(mydata.drop(columns='time_to_sleep'), np.squeeze(mydata[['time_to_sleep']]))
+
+
+
+
+
+
+F statistic is also called (Coefficient of partial determination)
+	[see:](https://en.wikipedia.org/wiki/Coefficient_of_determination)
+	[See also](http://facweb.cs.depaul.edu/sjost/csc423/documents/f-test-reg.htm)
+	The formula:
+		((SS_res_reduced-SS_res_full)/k)/(SS_res_full/(n-p-1))
+
+	k - number of parameters which is different
+	p - number of parameters in the full model
+	n - number of rows in the dataset
+
+library(tidyverse, quietly = TRUE)
+library(broom, quietly = TRUE)
+gpa_data <- read_csv("C:/MyDisk/MDS/DSCI_561/DSCI_561_lab3_sverma92/gpa_data.csv")
+model_1 <- lm(univ_gpa~high_gpa, gpa_data)
+model_2 <- lm(univ_gpa~high_gpa+math_sat, gpa_data)
+
+# Comparing model1 with null intercept only model
+	SS_res_reduced <- sum((gpa_data$univ_gpa - mean(gpa_data$univ_gpa))^2)
+	SS_res_full <- sum((broom::augment(model_1)$.resid)^2)
+	k <- 1
+	n <- nrow(gpa_data)
+	p <- 1
+
+	F_stas <- ((SS_res_reduced - SS_res_full)/k)/(SS_res_full/(n-p-1))
+	anova(lm(univ_gpa~1, gpa_data), model_1)
+
+	In the special case of comparing the two exact same hypotheses in a least squares linear model, it can be shown that the F-statistic is equal to the T-statistic squared, and that the p-value of the F-test and T-test are equal (see [here](https://canovasjm.netlify.com/2018/10/29/when-does-the-f-test-reduce-to-t-test/) for more). For example, when you use glance() on the model_1 object, you are performing an F-test comparing the null model to the model_1 object
+
+
+
+# Comparing model2 with null intercept only model
+	SS_res_full <- sum((broom::augment(model_2)$.resid)^2)
+	k <- 2
+	n <- nrow(gpa_data)
+	p <- 2
+
+	F_stas <- ((SS_res_reduced - SS_res_full)/k)/(SS_res_full/(n-p-1))
+	anova(lm(univ_gpa~1, gpa_data), model_2)
+
+
+# Comparing model2 with model1
+	SS_res_reduced <- sum((broom::augment(model_1)$.resid)^2)
+	k <- 1
+	n <- nrow(gpa_data)
+	p <- 2
+
+	F_stas <- ((SS_res_reduced - SS_res_full)/k)/(SS_res_full/(n-p-1))
+	anova(model_1, model_2)
+
+	#### F-stat & t-stat doing the same test
+	When you call `anova(model_1, model_2)` then hypothesis that is getting tested is as follows:  
+	$$H_0: \beta_2=0$$  
+	$$H_A: \beta_2\neq0$$  
+	We observe equivalent t-test in the `tidy(model_2)` table where we test the coefficient of the second variable to be equal to 0.
+
+
+	print(paste("The t-statistic from tidy is:", round(tidy(model_2)$statistic[3], digits=3), "square of which is:", round(tidy(model_2)$statistic[3]^2, digits=3)))
+	print(paste("The F-statistic from anova is:", round(tidy(anova(model_1, model_2))$statistic[2], digits=3)))
+
+
+
+
+
+
+
+
+
+
+correlation between predicted and actual is equal to R squared but not in general
+	$(cor(y,\hat{y}))^2=R^2$ only for a SLR model estimated by LS this is true, but it's *not* true in general 
+	This is true for 1 gene but if i remove the dimension of gene... that is pool data for all genes and then the relation betweek predicted & actual then in that case the correlation will not be equal to R squared.
+
+Mean squared error should be used to compare predicted with actual and not correlation as it can be confounded 
+
+
+
+
+
+
+
+Association is not causation is perhaps the most important lesson one learns in a statistics class.
+[Read this awesome book](https://rafalab.github.io/dsbook/association-is-not-causation.html)
+	a really good book makes me want to read it whole
+
+Spurious correlation
+	[Cool examples of spurious correlation](http://tylervigen.com/spurious-correlations)
+
+	The cases presented in the spurious correlation site are all instances of what is generally called data dredging, data fishing, or data snooping. It’s basically a form of what in the US they call cherry picking. An example of data dredging would be if you look through many results produced by a random process and pick the one that shows a relationship that supports a theory you want to defend.
+
+	```{r A Monte Carlo simulation can be used to show how data dredging can result in finding high correlations among uncorrelated variables.}
+	N <- 25
+	g <- 1000000
+	sim_data <- tibble(group = rep(1:g, each=N), 
+	                   x = rnorm(N * g), 
+	                   y = rnorm(N * g))
+
+	# Next, we compute the correlation between X and Y for each group and look at the max:
+	res <- sim_data %>% 
+	  group_by(group) %>% 
+	  summarize(r = cor(x, y)) %>% 
+	  arrange(desc(r))
+	res
+
+	# plot the data from the group achieving max correlation
+	sim_data %>% filter(group == res$group[which.max(res$r)]) %>%
+	  ggplot(aes(x, y)) +
+	  geom_point() + 
+	  geom_smooth(method = "lm")
+
+	# Distribution of all the correlations
+	res %>% ggplot(aes(x=r)) + geom_histogram(binwidth = 0.1, color = "black")
+	```
+
+	If we performed regression on the highly correlated group and interpreted the p-value, we would incorrectly claim this was a statistically significant relation. This particular form of data dredging is referred to as p-hacking.
+
+
+Outliers
+
+	Suppose we take measurements from two independent outcomes, X and Y, and we standardize the measurements. However, imagine we make a mistake and forget to standardize entry 23. We can simulate such data using:
+
+	```{r}
+	set.seed(1985)
+	x <- rnorm(100,100,1)
+	y <- rnorm(100,84,1)
+	x[-23] <- scale(x[-23])
+	y[-23] <- scale(y[-23])
+
+	qplot(x, y)
+	cor(x,y)
+
+
+	# But this is driven by the one outlier. If we remove this outlier, the correlation is greatly reduced to almost 0, which is what it should be:
+
+	cor(x[-23], y[-23])
+
+
+	# an alternative to the sample correlation for estimating the population correlation that is robust to outliers. It is called Spearman correlation. The idea is simple: compute the correlation on the ranks of the values. Here is a plot of the ranks plotted against each other:
+
+	qplot(rank(x), rank(y))
+
+	# correlation
+	cor(rank(x), rank(y))
+	cor(x, y, method = "spearman")
+
+	```
+
+
+
+
+
+
+
+
+Reversing cause and effect
+
+	Another way association is confused with causation is when the cause and effect are reversed. An example of this is claiming that tutoring makes students perform worse because they test lower than peers that are not tutored. In this case, the tutoring is not causing the low test scores, but the other way around.
+
+	We can easily construct an example of cause and effect reversal using the father and son height data.
+
+	library(HistData)
+	data("GaltonFamilies")
+	GaltonFamilies %>%
+	  filter(childNum == 1 & gender == "male") %>%
+	  select(father, childHeight) %>%
+	  rename(son = childHeight) %>% 
+	  do(tidy(lm(father ~ son, data = .)))
+
+	The model fits the data very well. If we look at the mathematical formulation of the model above, it could easily be incorrectly interpreted so as to suggest that the son being tall caused the father to be tall. The model is technically correct. The estimates and p-values were obtained correctly as well. What is wrong here is the interpretation.
+
+
+
+
+
+
+
+
+
+Confounding
+
+	Confounders are perhaps the most common reason that leads to associations begin misinterpreted. If X and Y are correlated, we call Z a confounder if changes in Z causes changes in both X and Y.
+
+
+	Admission data from six U.C. Berkeley majors, from 1973, showed that more men were being admitted than women: 44% men were admitted compared to 30% women. 
+
+	```{r}
+	data(admissions)
+	admissions %>% group_by(gender) %>% 
+	  summarize(total_admitted = round(sum(admitted / 100 * applicants)), 
+	            not_admitted = sum(applicants) - sum(total_admitted)) %>%
+	  select(-gender) %>% 
+	  do(tidy(chisq.test(.))) %>% .$p.value
+	```
+
+	But closer inspection shows a paradoxical result. Here are the percent admissions by major:
+
+	```{r}
+	admissions %>% select(major, gender, admitted) %>%
+	  spread(gender, admitted) %>%
+	  mutate(women_minus_men = women - men)
+	```
+
+
+	The paradox is that analyzing the totals suggests a dependence between admission and gender, but when the data is grouped by major, this dependence seems to disappear. This actually can happen if an uncounted confounder is driving most of the variability.
+
+	Plot the total percent admitted to a major versus the percent of women that made up the applicants: 
+
+	```{r}
+	admissions %>% 
+	  group_by(major) %>% 
+	  summarize(major_selectivity = sum(admitted * applicants)/sum(applicants),
+	            percent_women_applicants = sum(applicants * (gender=="women")) /
+	                                             sum(applicants) * 100) %>%
+	  ggplot(aes(major_selectivity, percent_women_applicants, label = major)) +
+	  geom_text()
+	```
+
+	The plot suggests that women were much more likely to apply to the two “hard” majors. Gender and major’s selectivity are confounded.
+		# create a facet plot as shown in the book
+
+
+	The majority of accepted men came from two majors: A and B. Few women applied to these majors.
+
+
+	Controlling the confounder
+
+	```{r}
+	admissions %>% 
+	  ggplot(aes(major, admitted, col = gender, size = applicants)) +
+	  geom_point()
+	admissions %>%  group_by(gender) %>% summarize(average = mean(admitted))
+	```
+
+	If we average the difference by major, we find that the percent is actually 3.5% higher for women.
+
+
+
+
+Simpson's Paradox
+	You can see that X and Y are negatively correlated. However, once we stratify by Z (shown in different colors below) another pattern emerges:
+	[simpsons_paradox](C:/MyDisk/MDS/simpsons_paradox.PNG)
+	It is really Z that is negatively correlated with X. If we stratify by Z, the X  and Y are actually positively correlated as seen in the plot above.
+
+
+confounding is addressed by adding the counfounding variable in the model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+confounding or simpson's paradox:
+	if we ignore groups and put all the datapoints together to create a linear regression model then it might be confounding bacause we are ignoring something very important
+
+
+
+
+
+
+There is a difference between what the question is...if we ignore gene variable alltogether then the regression coeficient observed is correct but the question is wrong.... and they were using interaction model to use individual gene slope
+
+
+
+
+
+
+
+
+
+
+
+The estiamte of the beta estimate to be the MLE we need the assumption of error being normal.
+
+
+
+iid & variance of the error can relax the assumption of error being normal. We can trust the results of the lm because it uses t-test... but we have to trust the CLT
+
+
+
+
+Multicollinearity is related to X being a singular matrix so that we can take the inverse of that matrix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+the distribution of the error term is not the same as the equality of variance assumption. The error terms \varepsilon_i in the model equation are random variables (rv). Each of this rv has a distribution, call it G. In our analysis so far we have been assuming that the errors have a common variance but we haven't assumed that G is normal. We mentioned that if G is normal then the LM equals the conditional expectation. The error can be, and in many cases is, non-normal.
+
+
+
+
+
+
+
+The conditional expectation is the best predictor of  𝑌  given a vector of variables  𝑋 
+A LM can be used as a predictor but it may not be the best
+If the data is jointly normal, the best predictor is linear!!
+The least squares regression is the best among other linear predictors
+
+
+
+- Let's only assume that the errors are $iid$ (independent and identically distributed) and independent of $X_j$
+	> with $E[\varepsilon_i]=0$ and $Var(\varepsilon_i)=\sigma$
+- Note that this assumption implies that $E[Y|\mathbf{X}]=\beta_0 + \beta_1 X_{i1} + \ldots + \beta_p X_{ip}$
+- Note that we are ***not assuming*** that $\varepsilon_i \sim \mathcal{N}(0,\sigma)$ 
+
+
+
+## Properties of the LS estimator
+### Unbiased estimator
+$E[\hat{\mathbf{\beta}}]=\mathbf{\beta}$
+### <font color="blue"> BLUE </font> : Best (lowest variance) Linear Unbiased Estimator 
+$Var(\hat{\mathbf{\beta}})=\sigma^2(\mathbf{X}^T\mathbf{X})^{-1}, \; \hat{\sigma}=\sqrt{\frac{\sum_{i=1}^n\hat{e}_i^2}{n-p-1}}$ ($p$ slopes + 1 intercept)
+### This is the estimate given by `lm`!!
+
+
+
+# The mean squared error 
+> for the estimator, not the prediction
+### $\text{MSE}(\hat{\beta})=E[(\hat{\beta}-\beta)^2]= Var(\hat{\beta})+\text{Bias}(\hat{\beta})^2=\\
+ \qquad \quad= Var(\hat{\beta})+(E(\hat{\beta})-\beta)^2$
+
+
+
+
+# The *t*-test
+What assumptions do we need for the test??
+### $\hat{\mathbf{\beta}}=(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{Y}$
+Note that, given $\mathbf{X}$, $\hat{\mathbf{\beta}}$ is a linear function of $\mathbf{Y}$, and $\mathbf{Y}$ has the same distribution as $\varepsilon_i$
+### If $\varepsilon_i \sim \mathcal{N}(0,\sigma^2) \implies \hat{\mathbf{\beta}}$ is also Normal!!
+> and we can construct an exact tests for the model coefficients
+
+
+
+
+## What if $\varepsilon_i$ are ***not*** Normal??
+### CLT: central limit theorem
+It can be proved that under certain conditions, the *asymptotic* sampling distribution of the LS estimators is *normal*, even when the errors are not!!
+> however, this result requires a large sample size (and "large" depends on characteristics of the sample)
+`lm` uses this result and constructs a *t*-statistic under the null hypothesis $H_0: \beta_j=0$
+> $t=\frac{\hat{\beta}_j-0}{SE(\hat{\beta}_j)}\sim \mathcal{t}_{n-p-1}$
+
+
+
+
+
+
+
+
+boot_fits <- marathon %>% 
+    rsample::bootstraps(times = 5000) %>% 
+    mutate(lm = map(splits, ~ lm(speed ~ training_miles, data = analysis(.x))),
+           tidy = map(lm, broom::tidy)) %>% 
+    select(-splits, -lm) %>% 
+    unnest(tidy) %>% 
+    filter(term == "training_miles") %>% 
+    select(-term)
+
+
+
+
+ggplot(t_star,aes(x=t_star)) + geom_histogram(color="navy") + 
+  theme_bw(24) + xlab("slope sampling distribution by bootstrapping") + ylab("Count") +
+  geom_vline(xintercept=b_obs$statistic,color="red")
+
+
+ggplot(beta1_boot, aes(x=estimate)) + 
+geom_histogram() + 
+labs(x = "Beta1", y = "Count") + 
+geom_vline(xintercept=slope,color="red") + 
+ggtitle("Bootstrap Distibution of Slope Estimate")
+
+
+t_star <- data.frame(t_star=(boot_fits$estimate - b_obs$estimate)/boot_fits$std.error)
+
+#pval using t-distribution
+pval_t<-b_obs$p.value
+pval_t
+
+#pval using bootstrapping and pivot method
+pval_boot <- (1+sum(abs(t_star) > abs(b_obs$statistic)))/(N+1)
+pval_boot
+
+
+
+x <- (beta1_boot$estimate - slope)/beta1_boot$std.error
+lm_stat <- temp$statistic[temp$term=="training_miles"]
+
+pval_boot <- (1+sum(abs(x) > abs(lm_stat)))/(5000+1)
+pval_boot
+
+
+
+
+
+
+
+Question: How to get a confidence interval of the slope parameter of an interaction slope for ex- for species virginica I need to add the normal slope and the interaction slope but how to get the confidence interval.
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ gaby
+
+
+based on some students' questions/comments, I see that some confusion persists about distributional assumptions and CLT results. Here is a summary: 1. We don't need to assume normality of the error terms to derive the LS estimator nor its SE, 2. We need a distribution to compute p-values since these are a probability statement to make inference!! 3. To compute p-values of a test on regression parameters (\beta), you need the distribution of the estimator, called the sampling distribution. 4. If the error terms are normal (so are the responses Y), then the sampling distribution of the LS estimator is also normal (see lect08)!! and this is an exact result (no asymptotic here). However, this exact distribution depends on the variance of the error term, which is usually unknown. 4. If the error terms are normal but the variance of the error term is estimated (with the residuals), then the sampling distribution is a Student's t distribution (also exact result!!), 5. If the errors are not normal but the CLT holds, then the sampling distribution (of the LS estimator) is approximately Normal (or t- if we estimate the variance). This is an asymptotic result (as the sample size increases)!! Note that CLT gives us a sampling distribution, it does not change the distribution of the data or the errors or the residuals!! 6. If the CLT does not hold and you are not making any parametric assumption about the distribution of the error terms, then you are left with non-parametric permutation or bootstrapping tests.
+
+@ tom
+
+https://blog.minitab.com/blog/adventures-in-statistics-2/what-are-the-effects-of-multicollinearity-and-when-can-i-ignore-them
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Extra:
+https://statisticalhorizons.com/multicollinearity
+
+
+
+
+
+
+
+
+
+
+
+
