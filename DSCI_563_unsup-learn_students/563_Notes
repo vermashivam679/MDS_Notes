@@ -1,0 +1,200 @@
+
+
+There is something called fuzzy k-means which can use some other type of distance
+
+
+Rodolfo said scaling is unsup... How is scaling a learning algorithm?
+
+Is there no CV in unsup?
+
+what if there is a circular cluster?
+
+a(i) should be mean instead of sum?
+
+
+
+
+
+What if one cluster has positive cov and another cluster has opposite cov?
+
+
+
+
+centriod = pd.DataFrame(kmeans.cluster_centers_, columns=['V1', 'V2'])
+centriod['Cluster_id'] = 5
+temp = pd.concat([centriod, mydata])
+
+alt.Chart(temp).mark_point(opacity=0.5).encode(
+        alt.X('V1', axis=alt.Axis(title="V1")), 
+        alt.Y('V2', axis=alt.Axis(title="V2")),
+        color = alt.Color('Cluster_id:O', legend=alt.Legend(title="Cluster"))
+    ).configure_axisX(
+        labelFontSize = 12,
+        titleFontSize = 12
+    ).configure_axisY(
+        labelFontSize = 12,
+        titleFontSize = 12
+    ).properties(
+        title="Plotting Data"
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+setwd("C:/MyDisk/MDS/DSCI_563/DSCI_563_lab1_sverma92")
+
+library(reticulate)
+repl_python()
+
+
+
+import pandas as pd
+import numpy as np
+from scipy.spatial import distance
+
+
+
+
+
+
+
+Expectation Maximization
+
+
+
+If i sum up the RV then the resulting random variable will be a gaussian
+If I sum up the pdfs then its a gaussian mixture
+
+
+\phi need to sum up to 1 because we want to sumup the area under gaussian mixture density to 1
+
+
+
+This is a parametric approach because if we use more number of data points then also we learn the same thing. 
+
+
+
+
+Once we have the labels we use liklihood to find the distribution. 
+
+We use k-means 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extent of reduction is dependent on the number of data points?
+
+
+
+
+In the low dimensional space, we calculate qij which is similar to gauchy distribution
+	not necessarily
+	can be done if number of features is more than the number of examples
+	I think if the number of data points are more then the solution becomes more unique
+
+
+
+
+
+
+
+
+
+
+
+Does choosing 2 dimensions different from finding one direction and then finding the orthogonal one in PCA ?
+
+
+advantages of PCA over other methods like t-SNE, 
+
+if t-SNE maintains the local structure why its variance should be similar to actual data so that method should be better than PCA (which maximizes variance) ?
+	PCA is a special case of MDS... will discuss this later
+
+there will be difference in projecting perpendicularly or projecting perpendiculat to one of the axis
+
+
+rodolfo said that the transformed data will have uncorrelated dimensions?why?
+
+
+
+
+
+
+
+sparse pca does not have orthogonality
+	this means that ther will be covariance between PCs which means sum of variances of the dimensions before & after PCA is not the same. THerfore the sum of variance contribution should not add upto 1. 
+
+
+
+
+
+
+
+
+
+
+do we have a common feature vector for every item or it can be serperate? 
+
+when you say sophie likes features of a movie... it could also mean she doesn't like all the features but the combination of those features made her like the movie a lot
+
+
+maybe sophie didn't like scarface because there was little drama in it (0.5) what if there was more drama. My point is that the sophie's profile being negative for drama is conditioned on less drama in the movie. 
+	that all the info we have... maybe we will bias our results if we assign positive value to those
+
+
+I think learning X will be more easier because that is common for all users so there is more data. ?
+
+
+It is interesting to see sophie rated drama (0.5 for scarface & 0 otherwise) higher than comedy (0 everywhere) but in the feature vector, drama is given a negative weightage while comedy is given 0. Maybe she didn't like the amount of drama or action in Scarface, if there was more she could have given a higher rating but that doesn't mean she doesn't like drama or action. Is this a drawback of this approach or am I understanding it wrong?
+	The answer could be that I shouldn't compare features with each other because as sophie if I have watched only scarface as a drama & acgtion movie & I have rated it relatively badly the that means my universe of drama movies contain only that movie which biases my opinion that I don't like drama movies. But since I haven't watched any comedy movie I am neutral to it. 
+	- followup: In this approach we are assuming features are independent of each other because what if sophie likes drama but hates action hence gave a lower rating despite good drama in scarface. Is not relating the features with each other a drawback of this approach or am I understanding it wrong? I think this independence of features is not getting captured in the regression method as well. Can the regression model be tweaked to make it slightly better ?
+		I think PCA is the answer for this. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

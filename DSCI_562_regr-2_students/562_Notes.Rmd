@@ -1,0 +1,613 @@
+---
+title: "Regression II"
+author: "Shivam Verma"
+date: "15/12/2019"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+library(ggplot2)
+library(rsample)
+```
+
+
+## Assumptions violation
+
+When specifying the regression model, we specify the equation:
+
+$$
+Y_i = \beta_0 + \beta_1X_{i1} + \ldots + \beta_pX_{ip} + \varepsilon_i
+$$
+
+but also make some underlying assumptions, such as:
+
+1. $\varepsilon_i$ is normally distributed
+2. $E[\varepsilon_i]=0$. 
+3. $Var(\varepsilon_i)$ is constant for all $i$
+4. The errors are not correlated.
+
+
+### Violation 1: Non-normality
+
+- If $\varepsilon_i$ is not normally distributed, the $t$-tests and $F$-test of the regression are valid only asymptotically. 
+
+- Also, LSE are not efficient, and the variance of LSE can be considerably higher than of MLE. (For example, in case of the Laplace distribution, the LSE has double the variance of the MLE. This can be a problem, specially in small samples.)
+
+- But, LSE are BLUE (best linear unbiased estimator) even in case of non-normality.
+
+
+### Violation 2: Errors with non-zero mean
+
+- If the errors have a fixed non-zero mean, this will be absorbed in the intercept and nothing changes. 
+
+- The problem is when the mean of the errors varies for different observations. One reason for this to occur is when $E[Y_i]$ is not only affected by $X$, but also by another variable $Z$ that is not being considered. 
+
+- In these cases, the LSE might be biased, and even inconsistent. (Inconsistent estimators are highly questionable since they do not converge to the parameter being estimated). But this will almost surely be the case. We never know the perfect specification of a model. 
+
+
+### Violation 3: Heteroscedasticity(This means that the variance of the errors is not constant)
+
+- This case is common in practice. One approach is to transform the data to stabilize the variance. 
+
+- LSE is: *unbiased, but not BLUE*, *consistent*, *not efficient (nor asymptotically efficient)* 
+
+- This is also true in case the errors present some correlation structures(**Violation 4**) such as autoregressive in Time Series Analysis. 
+
+
+
+## Model Function 
+
+- The relation between $X$ & $y$ may have many different functional forms called model functions. In general, $Y = f(X)$. But sometimes the model function might not have an easy and clear form. 
+
+- **What is Regression?**- You can think of regression as fitting a model with a quantitative response, Y. Your model function can have any form, it does not need to be linear, it is still called regression. 
+
+- **Objectives of Regression**- 
+  - Predicting/estimating values of a response, sometimes also describing the uncertainty of the prediction/estimate.  
+  - interpreting the relationship between predictors and response.  
+
+- Do not underestimate the usefulness of linear models though, as they are still of fundamental importance. Linear models are fairly simple, quite stable, and still provide good predictions in many situations, with the advantage of being highly interpretable. 
+
+
+## Parametric Assumption
+
+- Definition of Parametric Model:
+  - Computer Science: When defining a model function: for example, in linear regression, we assume that the **model function** is linear. We might also make assumptions about the conditional variance. 
+  - When defining **probability distributions**: for example, we might assume that residuals are Gaussian, or perhaps some other distribution. This tends to be the meaning of "parametric" in Statistics. 
+
+### Consequences of Parametric Assumption
+
+- **Interpretability**: Giving meaning to each parameter of the model and the error will reflect how true your assumption is and accordingly give you error which might not be low as compared to non-parametric models. 
+
+- **Reduced error**: 
+  - The model variance decreases because we're adding information to our data set & we don't need to estimate as many quantities. 
+  - The bias increases the "more incorrect" your assumption is. The hope is that your model is "correct enough" so that the increase in bias is small in comparison to the decrease in variance, resulting in an overall decrease in error (MSE). 
+
+
+## How to tackle restricted range in linear regression
+
+- **Variable Transformation**: transform($Y$) => Build the model => re-transform your prediction. 
+  - We lose interpretability because $f(E[Y]) \neq E[f(Y)]$. See [Jensen's Inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality) (if X is a random variable and φ is a convex function, then ${\displaystyle \varphi \left(\operatorname {E} [X]\right)\leq \operatorname {E} \left[\varphi (X)\right].})$. 
+
+  - We end up with a biased estimator (that might still be a decent estimator). 
+
+- **Link Functions**: transform the model function. 
+  - In general, $g(E(Y|X = x)) = x^T\beta$ for some monotonic function $g$ called the **link function**. 
+  - Advantage is not having to transform the data. 
+
+- **Scientifically-backed functions**: theoretically derived formulas for the relationship between response and predictors, which have parameters that carry some meaning to them. 
+
+
+
+## Generalized Linear Model
+
+A generalized linear model is specified according to three components:
+
+1. **Random component:** your random response variables, $Y_1,\ldots,Y_n$, for which you assume a probability distribution. For example, in classification we assume the Bernoulli distribution. Defines **likelihood function** to get estimates from MLE. 
+
+
+2. **Systematic Component:** this is how your covariates come into the model, as part of the linear predictor, usually denoted by $\eta$:
+$$
+\eta_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \ldots + + \beta_pX_{ip}
+$$
+
+
+3. **The link function:** the link function is what connects the **random component** with the **systematic component**. The connection is made through the mean of your response. The link function specify how the expected value of your response relates to the linear predictor (your covariates):
+$$
+g(\mu_i) = \eta_i 
+$$
+
+You can specify the association between $\mu_i$ and $\eta_i$ **any way** you want (almost - technically you can use any monotonic and differentiable function $g$). 
+
+
+
+### Commonly used distributions and link functions
+
+- A canonical, normal, or standard form of a mathematical object is a standard way of presenting that object as a mathematical expression. In GLM we can also not use canonical functions
+
+- For the `Gamma` and `Inverse Gaussian` distributions, the link functions does not restrict $\mu$ to be positive. Therefore non-canonical link functions, like $\log(\mu) = \eta$ are commonly used. 
+
+- If you use the canonical link functions in these cases, you might need to provide the `glm` function with a valid start point. 
+
+Distribution | canonical link function | Usage |
+-------------|-------------------------|------- |
+Normal       |   identity: $\mu=\eta$  | classic linear regression |
+Binomial     | $\log\left(\frac{\mu}{n-\mu}\right) = \eta_i$ | model for proportions. In classification problems, $E[Y | X = x ]$, is the probability of the target. |
+Poisson      |    $\log(\mu) = \eta$   | model for counts (it needs adjustments in case of overdispersion) |
+Negative Binomial | $\log\left(\frac{\mu}{\mu + k}\right)$ (note, however, that the default link function in R `glm.nb` is $\log(\mu) = \mu$ | model for counts that can capture overdispersion  |
+Gamma        | $\mu^{-1} = \eta$ | non-negative continuous data which the variance grows with the mean, but the coefficient of variation is approximately constant.|
+Inverse Gaussian | $\mu^{-2} = \eta$ | non-negative continuous data (especially highly skewed data |
+
+
+
+
+```
+# Model 1: Distribution = "Poisson"; Link= "log"
+glm(n_male ~ width, data=crab, family=poisson, start = c(0, 1))
+ + geom_smooth(method="glm", se=FALSE, method.args=list(family=poisson)) + 
+
+# Model 2: Distribution = "Poisson"; Link= "identity"
+glm(n_male ~ width, data=crab, family=poisson(link = "identity"), start = c(0, 1))
+
+# Model 3: Distribution = "Gaussian"; Link= "log"
+glm(n_male ~ width, data=crab, family=gaussian)
+
+# Model 4: Null Model
+glm(n_male ~ 1, data = crab, family=poisson)
+```
+
+### Overdispersion
+
+- Some distributions have the variance related with the mean. GLM naturally deals with some types of heteroscedasticity. Example 
+  - The variance of an exponential distribution, is the square of the mean, i.e., $\sigma^2 = \mu^2$. 
+  - The variance of a Binomial distribution is  $\sigma^2 = np(1-p) = \mu(n-\mu)/n$. 
+  - The variance of a Poisson is equal to the mean, i.e., $\sigma^2=\mu$. 
+
+- If the variance of your data is bigger than the variance considered by your model then the confidence intervals for your parameter will be narrower than it should be. 
+- Variance can be adjusted using a statistical test to get a dispersion estimate. 
+
+```
+estimated_dispersion <- AER::dispersiontest(model_pois_log)$estimate
+summary(model_pois_log, dispersion = estimated_dispersion)
+```
+- Can fit a quasipoisson. 
+  - The quasipoisson family allows the regular variance value to be multiplied by a constant. 
+  - Also, note that using the quasipoisson doesn't change the estimates, just the standard errors. 
+  - Finally, you do not get the AIC from a quasipoisson, because there is no likelihood function for this method. 
+
+- Lastly, you can use the negative binomial. 
+  - The negative binomial has $\sigma^2 = \mu + c\mu^2$, for some constant $c$. 
+  - Therefore, the model has more flexibility to deal with overdispersion. 
+  - to fit a negative binomial glm, you can use `glm.nb` from package `MASS`. 
+
+
+## Local Regression Models
+
+### KNN Regression, `caret::knnreg()` 
+- $k=1$, low bias but high variance
+- $k=n$, High bias and low variance
+- As your sample size increases and your $k$ increases, in such a way that $k/n$ goes to zero, KNN will approximate any function you want. The problem is that the rate of this convergence can be quite slow, especially in high dimensional data. 
+- You can think of this like you are putting more and more points in your plot, so your plot will get cluttered in such a way that you will have a lot of points to be used as neighbors in any region of your plot. 
+
+### Piecewise Constant (Step functions)
+
+The idea behind the step function is to break the range of your predictors in intervals (create dummy variables). In each interval, we adjust a constant, in fact, the average response in that interval. `model_steps <- lm(fat ~ steps, data = cow3)`. 
+
+### Piecewise Linear
+Linear regression with interaction terms. `model_piecewise_linear <- lm(fat ~ week*steps, data = cow3)`. 
+
+
+### Continuous piecewise linear
+
+We can impose restrictions to make sure that the lines are connected to each other: 
+
+$$
+Y = \beta_0 + \beta_1\max\{0, X-\delta_1\} + \ldots + \beta_5\max\{0, X-\delta_4\}
+$$
+
+where $\delta_i$ represents the `knots` that divides the $X$ region into intervals. As you enter a region, for e.g. from $\delta_i$ to $\delta_{i+1}$ then you add $\beta_{i+1}$ to $\beta_i$ to change the slope. This can be achieved by creating different variables of the form $max\{0, X-\delta_i\}$ for different regions and include in simple `lm`. For e.g. for NDO(`0-7`, `7-14`, `15-30`, `30-60`, `60-90`) 5 variables should be created to capture slope in each region. 
+
+
+### LOESS Regression
+
+- Select the "size" of your neighborhood using the `span` parameter. It specifies the proportion of points that will be considered as neighbors of $x$. The higher the proportion, smoother the fitted surface will be. 
+- Assign weights to neighboring points based on distances. The closer the point is, the more weight it will receive. 
+- Specify the `degree` parameter. If you are fitting a constant (`degree`= 0), a linear model (`degree` = 1), or a quadratic model (`degree` = 2). By quadratic I mean $\beta_0+\beta_1 x_i+\beta_2 x_i^2$. 
+- Minimize the mean squared error considering the weight (Loss function). 
+$$
+\sum w_i \left(y_i - \beta_0-\beta_1 x_i-\beta_2 x_i^2\right)^2
+$$
+- If any of your predictors are categorical you need to split the data. Then, for each combination you need to fit a separate loess. 
+- Loess works better for low-dimensional problems because of 'the curse of dimensionality'. 
+
+
+## Quantile Regression
+*Example*: A bus company wants conservative estimates so that most busses (say 90% of the busses) fall within the estimated travel time. 
+
+
+### Quantile Function
+
+Say you have a variable $X\sim F_X$. Then, the $\tau$-quantile ($0\leq \tau \leq 1$), is given by $Q(\tau)$ such that $F_X(Q(\tau)) = P(X\leq Q(\tau)) = \tau$.
+
+
+### Non-Parametric Quantile Regression
+
+- No distributional assumption, No model function specification. The idea is to allow the model to capture the local behavior of the data. Like we've seen in local regressions, but this time instead of the mean, we are estimating quantile. 
+- The neighborhood is defined by the parameter `lambda`. Small neighborhood (small lambda), provide a better approximation, but with too much variability. Too large neighborhood (big lambda), we lose local information in favor of smoothness, going towards a global model. 
+- `rqss(y ~ qss(x, lambda = 10), tau = .5, data = my_data)` each predictor must be introduced in the formula using the `qss` function. 
+
+
+### Parametric Quantile Regression
+
+
+#### The error function for quantile regression
+
+- In linear quantile regression, we use the linear predictor to explain the conditional quantiles
+$$
+Q_i( \tau | X = x_i) = x_i^T \beta(\tau)
+$$
+and then find $\hat{\beta}$ that minimizes the following error function called 
+$$
+\sum_{i} e_i(\tau - I(e_i < 0)) = \sum_{i: e_i > 0} \tau|e_i|+\sum_{i: e_i < 0}(1-\tau)|e_i|
+$$
+where $e_i = y_i - x_i^T\beta$. This error function is called _"Fidelity"_.
+
+
+- Note that $\beta(\tau)$ depends on $\tau$, which is the desired quantile. In other words, for each quantile, you (might) have a different line. 
+
+- Observe that for low values of $\tau$ we consider overestimating worse than underestimate. 
+
+- If your linear predictor has $p$ parameters, then your quantile regression will interpolate $p$ points. For example, if you are fitting a line $Q_i( \tau | X = x_i) = \beta_0 + \beta_1x_i$, you are fitting two parameters. So, your fitted line is a line that pass through two points. 
+
+- When you use the $\tau$-th quantile, approximately $n\times\tau$ points will be under the curve and $n(1-\tau)$ will be above the curve. The approximately comes because we will have $p$ points **on** the line. 
+
+- for any monotone function ($Q()$), $Q_Y\left[\log(X)\right] = \log({Q_Y\left[X\right]})$ 
+- `fit_rq <- quantreg::rq(runs ~ hits, data=data, tau=c(0.25, 0.5, 0.75))` 
+
+
+#### Crossing Quantiles
+
+- Crossing quantile is a problem, a mathematical absurd, as we know that a higher quantile is always higher than a lower quantile. 
+- However, imagine you are estimating two lines, say for quantile 0.25 and quantile 0.5. If these lines have different slopes, they will, at some point, cross paths. 
+- If there is a signficant number of observation before or after the crossing, then we probably have a miss-specified model. 
+- However, If the crossing only happens at extreme values of the predictor space, and/or for large quantile levels, we might still have a useful estimated model. 
+
+
+#### Quantile regression on count data
+
+- In turns out that Quantile Regression relies on the asymptotical normality of the statistics and this is not achieved when we have a discrete $Y$. Therefore, in those cases, the inference quantities are not reliable. However, for count data, you can use the `quantreg::dither` function to introduce some random perturbation. *remember that a Poison with a high  𝜆  converges to a Gaussian.*
+
+```
+tau <-  c(.05, .1, .15, .2)
+model_dither <- rq(dither(n_male, type = "right", value = 1) ~ width, data = crab_raw, tau = tau)
+
+# estimate the standard error of our parameters using bootstrap
+summary( model_dither, se = "boot")
+```
+
+## Variance Regression
+
+Mean Squared Error (MSE) is the variance of residuals, meaning variance is a mean too. So we can fit a regression model to get the mean of the squared residuals, which is the variance. `var_fit <- loess(I(resid^2) ~ week, span = .4, degree = 2, data = flu)`. 
+
+## Probabilistic Forecast (density estimation)
+
+- The probabilistic forecast/prediction contains the most amount of information about the response as possible (based on a set of predictors), because it communicates the entire belief of what $Y$ values are most plausible, given values of the predictor. 
+- Predictions/forecasts here are called __predictive distributions__. 
+- There's a technique called the _kernel density estimate_ that works as an alernative to the histogram. The idea is to put a "little mound" (a kernel) on top of each observation, and add them up. Instead of playing with the binwidth, you can play with the "bandwidth" of the kernels. Use `geom="density"` in `qplot`, and use `bw` to play with the bandwidth. 
+- `qplot(x, geom="density", bw=2.5)` 
+
+## Probabilistic Forecasts: subset-based learning methods
+
+- The local methods and classification/regression trees that we've seen so far can be used to produce probabilistic forecasts. These methods result in a subset of the data, for which we're used to taking the mean or mode. Instead, use the subsetted data to plot a distribution. 
+  - For kNN, form a histogram/density plot/bar plot using the $k$ nearest neighbours. 
+  - For the moving window (loess), form a histogram/density plot/bar plot using the observations that fall in the window. 
+  - For tree-based methods, use the observations within a leaf to form a histogram/density plot/bar plot for that leaf. 
+
+- Bias-variance / overfitting-underfitting tradeoff with kNN-based probabilistic forecasts. 
+  - When $k$ is large, our estimates are biased, because the distributions are not centered correctly. But, the estimates are more consistent. 
+  - When $k$ is small, our estimates are less biased, because the distributions overall have a mean that is close to the true mean. But the variance is high. 
+
+- A similar thing happens with a moving window, with the window width parameter. For tree-based methods, the amount that you partition the predictor space controls the bias-variance tradeoff.
+
+### When are they not useful?
+
+- Probabilistic forecasts are useful if you're making a small amount of decisions at a time. For example: 
+  - Looking at the 2-day-ahead prediction of river flow every day to decide whether to take flood mitigation measures. 
+
+- But they are not appropriate when making decisions en-masse. For example: 
+  - A bus company wants to know how long it takes a bus to travel between stops, for all stops and all busses. 
+  - You want to predict future behaviour of customers. 
+
+
+
+## Survival Analysis
+
+### Censoring
+
+There are three general types of censoring, right-censoring, left-censoring, and interval-censoring. e.g. study of age at which African children learn a task. Some already knew (left-censored), some learned during a study (exact), some had not yet learned by end of study (right-censored)
+
+- Removing censored data will result in uncertainty in our estimates to be larger than it could be if we were to include the censored data. 
+- Removing censored data could also result in _biased_ estimates if data have only been collected for a short duration. 
+
+- **Right-censoring**: The most common type encountered in survival analysis data is right censored. It is called right censoring because the true unobserved event is to the right of the censoring time. 
+  - **Constant Right Censoring**: Say you want to study the time until patients with a certain type of cancer die. After the 10th year, the study will end. If at the end of your study an individual did not die due to cancer, then, all you know is that the time of occurrence for that individual is higher than 10 years. 
+  - **Random Right Censoring**: imagine in the previous example, if a patient was hit by a bus and died in the accident. The death would be unrelated to cancer, so all you know is that until that moment the patient did not die due to cancer. Or, what if a patient you were following, move out of the country? it's the same problem. 
+
+- **Left-censoring**: this occurs when we cannot observe the time when the event occurred. For obvious reasons if the event is death, the data can’t be left-censored. 
+  - Example 1: Suppose you want to know when kids learn how to ski. One of the kids participating in your study already knows how to ski. So, the event already happened, in a past time, but you cannot know precisely when it was. All you know is that it was before the current time. 
+
+
+
+**Survival Function**: Let's consider a random variable $Y$ as the time until an equipment breaks. We are more interested in the probability that the equipment will not break before a certain point in time. $S_Y(t) = P[Y > t] = 1 - F_Y(t)$. 
+
+
+
+**Hazard function**: This is given by $\lambda(t) = \lim_{\Delta t\rightarrow 0} \frac{P(Y < t+{\Delta t} | Y\geq t)}{\Delta t} = \frac{f_Y(t)}{S_Y(t)}$
+
+One can interpret $\lambda(t)\Delta t$ as the approximate probability of the event occurring immediately, given that the event has not occurred up until time `t`. 
+
+$\lim_{\Delta t\rightarrow 0} \frac{P(Y < t+{\Delta t} | Y\geq t)}{\Delta t} = \lim_{\Delta t\rightarrow 0} \frac{P(t \leq Y < t+{\Delta t})}{(\Delta t) P( Y\geq t)} = \frac{f_Y(t)}{S_Y(t)}$ 
+
+Since, $f_Y(t) =  -\frac{dS_Y(t)}{dt}$. 
+
+
+$\lambda(t) = -\frac{dS_Y(t)}{S(t)dt} = -\frac{d(ln(S_Y(t)))}{dt}$
+
+
+
+### Weibull distribution Case
+
+The Weibull distribution is one of the most popular in survival analysis. Note that if $\alpha = 1$ we get the Exponential distribution with parameter $\beta$. 
+
+- It's density is given as follows, where $\alpha$ is called shape parameter, and $\beta$ the scale parameter.
+$$
+f(t) = \frac{\alpha}{\beta^\alpha}t^{\alpha - 1}\exp\left\{-\left(\frac{t}{\beta}\right)^{\alpha}\right\}, \quad t, \alpha, \beta > 0, 
+$$
+- It's CDF is given by
+$$
+F(t) = 1 - \exp\left\{-\left(\frac{t}{\beta}\right)^{\alpha}\right\}, \quad t > 0
+$$
+and $0$ otherwise.
+
+
+- Therefore, the survival function of the Weibull distribution is:
+$$
+S(t) = \exp\left\{-\left(\frac{t}{\beta}\right)^{\alpha}\right\}, \quad t > 0
+$$
+
+- The hazard function for the Weibull distribution is given by:
+$$
+\lambda(t) = -\frac{d(ln(S_Y(t)))}{dt} = \frac{\alpha}{\beta^\alpha}t^{\alpha - 1}
+$$
+
+
+- Note that you can use `pweibull` in R to get the Survival Probability of each time t (just set `lower.tail = FALSE`): `pweibull(q = 2, shape = 1, scale = 1, lower.tail = FALSE)`. 
+
+
+There are other distributions that can also be used to model the survival function, such as:
+  - Gamma distribution
+  - Log-Normal distribution
+
+
+
+
+### Univariate Analysis
+
+There are options for estimating quantities by incorporating the partial information contained in censored observations:
+
+- **Option 1**: if no distributional assumption is made, the Kaplan-Meier (non-parametric method, `survival::survfit()`) method can be used to estimate the survival function. 
+  - Mean: can be estimated as the area under an estimate of the survival function(remember 551). 
+  - Quantiles: can be estimated by inverting an estimate of the survival function. 
+
+- In the very heart of the `survival` package is the `Surv` function. `Surv` will receive two parameters, the first one is the `time`, and the second one says if the recorded time was `censored` or the actual `event`. 
+
+- The Kaplan-Meier estimate of the survival function does not always drop to zero (when the largest observation is censored), in which case estimates of some high quantiles and the mean would not exist. A common "fix" is to force the survival function to drop to zero at the largest observation. The mean estimate that results is called the _restricted_ mean. 
+
+
+- **Option 2**: If a distributional assumption is made, we can use likelihood-based methods to fit the distribution, and any quantity can be extracted from that distribution. 
+  - Now, if we **assume** that the data follow a Weibull distribution, we can estimate the parameters of the Weibull considering the censored data. We can do this using the `survreg` function. 
+
+
+```
+library(tidyverse)
+library(survival)
+library(broom)
+
+# futime: is the surival or censoring time;
+# fustat: 1 if the observation was censored;
+# rx: is the treatment group;
+# see ?ovarian for more info
+
+my_ovarian <- ovarian %>% select(futime, fustat, rx)
+head(my_ovarian)
+
+# The plus sign means the time was censored (we only know that the time is higher than that!)
+Surv(my_ovarian$futime, my_ovarian$fustat)
+
+# Non Prametric Kaplan-Meier Null Model
+fit_km <- survfit(Surv(futime, fustat) ~ 1, data = ovarian)
+tidy(fit_km)
+glance(fit_km)
+
+ggfortify::autoplot(fit_km) +
+    theme_bw() +
+    ylab("Survival Function") +
+    ylim(0, 1)
+
+
+survival::quantile(fit_km, probs = c(0.25, 0.5), conf.int = FALSE)
+
+# Lognormal distributional assumption, NULL model
+model_lognormal <- survreg(Surv(futime, fustat) ~ 1, dist = "lognormal", data = my_ovarian)
+model_gaussian <- survreg(Surv(futime, fustat) ~ 1, dist = "gaussian", data = my_ovarian)
+
+# Ploting the distribution on top of Kaplan Meier curve
+est_survival <- 
+    tibble(surv = seq(0.999, 0.001, -0.001), 
+           time_gaussian = predict(model_gaussian, newdata = tibble(x=1), type = "quantile", p = 1-surv),
+           time_lognormal = predict(model_lognormal, newdata = tibble(x=1), type = "quantile", p = 1-surv))
+
+autoplot(survfit(Surv(futime, fustat) ~ 1, data = my_ovarian)) + 
+ geom_line(aes(time_gaussian, surv), data = est_survival, color = "blue") + xlim(0, 1200) + 
+ geom_line(aes(time_lognormal, surv), data = est_survival, color = "red")
+
+# Cox proportional hazards model
+fit_ph <- survival::coxph(Surv(futime, fustat) ~ rx, data = my_ovarian)
+
+
+```
+
+
+### Cox proportional hazards model
+
+- The Cox proportional hazards model is a commonly used model that allows us to interpret how predictors influence a censored response. 
+
+- The idea is to model the Hazard function directly: $\lambda_i(t) = \lambda(t)\exp\left\{\beta_1X_{i1} + \ldots + \beta_pX_{ip}\right\}$. The hazard is useful to model due to its flexibility and interpretability. 
+
+- Note that, it models an individual's hazard function as some baseline hazard ($\lambda(t)$), which is equal for every data example, multiplied by $\exp\left\{\beta_1X_i + \ldots + \beta_pX_p\right\}$. 
+
+- The coefficient $\beta$ on a predictor $X$ (contained in $\eta$) has the following interpretation: an increase in $X$ by one unit is associated with an increase in hazard (at any time) by $\exp(\beta)$ times (i.e., the effect is multiplicative). 
+
+
+
+## Mixed Effects
+
+When there is grouping by a variable then there are 4 options to choose from: 
+
+- **Aggregate** data and fit model. 
+- **Pool data**, ignore the grouping and fit model ($Y_{ij} = \beta_0 + \beta_1\text{feature_1}_{ij} + \ldots + \beta_n\text{feature_n}_{ij} + \varepsilon_{ij}$). 
+- **Additive model**, allow different intercept ($Y_{ij} = \beta_{0i} + \beta_1\text{feature_1}_{ij} + \ldots + \beta_n\text{feature_n}_{ij} + \varepsilon_{ij}$). 
+- **Interactive/Multiplicative model**, allow different slopes & intercept (this means fitting a separate linear model) ($Y_{ij} = \beta_{0i} + \beta_{1i}\text{feature_1}_{ij} + \ldots + \beta_{ni}\text{feature_n}_{ij} + \varepsilon_{ij}$). 
+
+
+```{r mixed effects 1, eval=FALSE}
+data(Grunfeld)
+grunfeld <- as_tibble(Grunfeld) %>% mutate(firm = as_factor(firm))
+
+# Pooled Regression
+fit_pooled <- lm(inv ~ value + capital, data = grunfeld)
+summary(fit_pooled)
+
+# Model with varying intercept
+fit_intercept <- lm(inv ~ value + capital + firm - 1, 
+                    data = grunfeld)
+summary(fit_intercept)
+
+# By doing the -1 trick we are making the intercept to converge at 0 (it will be zero because there is no company other than the 10 comapnies)
+# If we use this model to predict for new a company it will use that 0 intercept because all the dummy variables will be 0
+# The mixed models predict using the mean estimate of intercept instead of 0
+# If we don't use -1 we are using one comapny as a base case, we neither want to use 1 company as base nor we want 0 intercept so its better to go with mixed models
+
+# different intercepts are significant but causes degree of freedom to reduce per firm (9)
+anova(fit_intercept, fit_pooled)
+
+# A linear model for each company
+fit_sep <- lm(inv ~ value*firm + capital*firm, data = grunfeld)
+summary(fit_sep)
+
+# But Grunfeld wanted to see how capital and value affect gross investment among the companies. Not for *one specific company*! The conclusions must be valid for "all" the companies.
+```
+
+
+### Fixed Effects Model
+
+So far, we have been working with regression models with independent data. Given a set of features $X$ and a response $Y$, we fitted a model
+
+$$
+Y_i = x_i^T\beta +\epsilon_i
+$$
+
+The coefficients in $\beta$ are fixed and the same for all the observations $\left(x_i,y_i\right)$. They are called _fixed effects_.
+
+
+### Linear Mixed-Effects Model
+- Although the models are similar, the interpretation and conclusions are quite different. 
+- Remember that, in Mixed-Effects Model, we are assuming that the firms were sampled, so our conclusion is valid for the entire population. 
+- To predict on an existing group, we find that group's regression coefficients (and therefore model function) by summing the fixed effects and (if present) the random effects, then use that model function to make predictions. 
+- To predict on a new group (using a mean prediction), we use the fixed effects as the regression coefficients (because the random effects have mean zero), and use that model function to make predictions. 
+- While the random effects are _assumed_ to follow a joint Normal distribution, this is different from the sampling distribution of the estimates of the fixed effects. 
+	- The gaussian distribution of random effects explains the spread of regression coefficients, and does not change when we collect more data (we just get a better estimate of this distribution) 
+	- The sampling distribution explains the uncertainty in the estimates and gets narrower as we collect more data.  
+
+
+### Additive Model
+
+$$Y_{ij} = \beta_{0i} + \beta_{1}\text{value}_{ij} + \beta_{2}\text{capital}_{ij} + \varepsilon_{ij}=\beta_{0} + \beta_{1}\text{value}_{ij} + \beta_{2}\text{capital}_{ij} + b_{0i} + \varepsilon_{ij}$$ 
+
+- But $\beta_{0i}$ will depend on the firm, which is selected at random. Therefore it is a random variable. 
+- $b_{0i}\sim N(0, \sigma_b^2)$ is called random effect and we assume the random effects are independent of $\varepsilon_{ij}\sim N(0, \sigma^2)$. 
+- Two observations for the same company (group) share the same random effect, therefore they are correlated. 
+
+$$
+Var(Y_{ij}) = Var(b_{0i}) + Var(\varepsilon_{ij}) = \sigma_b^2 + \sigma^2
+$$
+
+$$
+Corr(Y_{i1}, Y_{i2}) = \frac{\sigma^2_b}{\sigma_b^2 + \sigma^2}
+$$
+
+
+### Multiplicative Model
+
+- We could also have assumed that each firm has its own intercepts, and slopes, $\beta_{0i}$, $\beta_{1i}$ and $\beta_{2i}$
+$$
+Y_{ij} = (\beta_{0} + b_{0i}) + (\beta_{1} + b_{1i})\text{value}_{ij} + (\beta_{2} + b_{2i})\text{capital}_{ij} + \varepsilon_{ij}
+$$
+where $(b_{0i}, b_{1i}, b_{2i}) \sim N_3(0, D)$, where $D$ is a generic covariance matrix.
+
+
+
+
+
+```{r mixed effects 2, eval=FALSE}
+model_intercept <- lmer(inv ~ value + capital + (1 | firm), 
+                        data = grunfeld)
+model_slope <- lmer(inv ~ value + capital + (value | firm), 
+                    data = grunfeld)
+
+summary(model_intercept)
+coef(model_intercept)
+fixef(model_intercept)
+
+# predicting for new firm which was not in training data
+predict(model_intercept, 
+        newdata = tibble(firm = as_factor(30), value = 2000, capital = 1000),
+        allow.new.levels = TRUE)
+```
+
+
+
+### Available Formula Options 
+
+![Mixed_effects_formulas](Mixed_effects_formulas.jpg)
+[source](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf) 
+
+
+**Example of third formula**: 
+
+Consider the productivity score of six randomly chosen workers operating 3 different machines. Each worker uses each machine three times. 
+- The machines seems to affect the workers differently as well
+  - Since the workers are random, we have a nested random effect of machines within workers.
+
+#### A possible model 
+
+`model_mach <- lmer(score ~ Machine + (1 | Worker), data = Machines)` 
+
+$$Y_{ijk} = \beta_j + b_{0i} + \varepsilon_{ijk}$$
+
+where $i=1,...,6$ (indexes the operators), $j=1,2,3$ (indexes the machines), and $k = 1,2,3$ (indexes the trial) 
+
+
+#### A more complex model (with interaction)
+
+`model_mach <- lmer(score ~ Machine + (1 | Worker/Machine), data = Machines)` 
+
+$$Y_{ijk} = \beta_j + b_{0i} + b_{ij} + \varepsilon_{ijk}$$
+
+where $i=1,...,6$ (indexes the operators), $j=1,2,3$ (indexes the machines), and $k = 1,2,3$ (indexes the trial)
+
+

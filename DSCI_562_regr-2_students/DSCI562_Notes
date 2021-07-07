@@ -1,0 +1,367 @@
+
+
+
+Having a Linear models is dependent on parameters being linear and not predictiors
+
+
+
+Incase of small sample size, LSE has higher variance therefore MLE is better but in general, LSE is the best estimator even in case of non-normality
+
+
+You can think of regression as fitting a model with a quantitative response, Y. Your model function can have any form, it does not need to be linear, it is still called regression.
+
+Linear models are good for interpreting because the relationship will be the same... i.e. direction of beta will be same & sometimes the direction is also not the same. Its difficult to estiamte how the model will change by changing the predictor.
+	parametric models are more interpretable.
+	Didnt understand why the error is reduced
+		This statement is in general... if you fix the functional form of the parametric model there is limited scope of the model function (constrained to follow the bias-variance trade-off and if one increases the other decreases so there is limited scope of error) to vary because it has to follow that functional form but non-parametric has more flexibility(its error can be huge because it follows a more wider set of possibilities) therefore has higher error.
+		They have reduced variance and the corresponding increase in bias is not that great hence reducing the overall error.
+
+
+
+The estimator of beta is bisased if you transform to log (for example) and then convert it back
+	because non-linear transformation is not simple in expectation. 
+	So instead of transforming the variables you transform the model function. For example in logit function
+
+Logistic regression is the same as binomial because the distribution of Y is [0,1] which is bernoulli which is binomial.
+
+
+
+Least squares is best for normal data but for non-normal data MLE is the best estimator.
+
+
+
+
+
+
+
+
+
+
+# Friday lecture
+
+WHen we transform the variable(for e.g. log(LF)) then we are modeling the E[log(LF)] in a linear fashion. If E[log(LF)] was equal to log(E[LF]) then it would have been the same as using the link function. But since the expectations are not equal therefore we cannot say that transforming the variable is same as using the link function.
+
+In GLM we use the likelihood function as the loss function so incase of binomial/bernoulli its the p^x(1-p)^(1-x)
+	https://stats.stackexchange.com/questions/396366/loss-function-for-generalized-linear-models
+		The methods of least squares and maximum likelihood are two different statistical procedures. The OLS is used to estimate the coefficients in a linear regression model by minimizing the sum of squares of the differences between fitted values and observed values regardless of the form of the distribution of the errors. Least squares produces best linear unbiased estimators of those coefficients. However, if the form of the distribution of the errors is known, the alternative of MLE can be used to estimate those coefficients. In other words, if you try to use MLE to estimate those parameters, then the form of the distribution of the random error needs to be assumed so that the likelihood function can be obtained. Of course, if the hypothesis testing and confidence interval construction are to be performed with OLS, then the form of the errors usually is assumed a normal distribution. That is why we have those t-test, chi-square test and F-test with OLS if the errors are normally distributed.  
+
+		The OLS is also termed as the L2-norm regression problem, and minimizing the sum of the absolute errors is often called the L1-norm regression problem. Both these regression problems are special cases of Lp-norm regression, where p is between one and two. Therefore, maximizing the likelihood function with normal errors leads to the criterion of least-square (minimizing the sum of squares of errors), and maximizing the likelihood function with double-exponential distribution of errors leads to the criterion of minimizing the sum of absolute errors.
+
+	https://www.stat.cmu.edu/~cshalizi/uADA/12/lectures/ch12.pdf
+		
+
+In loess we need the whole dataset for prediction because we need to find the closest neighbors to compute weights. Once we have the weights we take the weighted sum of the squared errors and it minimizes that and computes coef to come-up with regression.
+
+If we use a very large span then weights get equally distributed.
+
+In poisson regression, sometimes its doesn't converge so we have to give proper starting point like bet0=0 & beta1=1
+
+If poisson distribution increases to giving large numbers then it converges to gaussian.
+
+In practice, I can check for the variance of the response variable to check if its increasing & if it is then can use poisson distribution whereas if its same gaussian.
+
+
+How MSE can be used in classification
+	https://en.wikipedia.org/wiki/Brier_score
+
+
+
+Now I truly understand the essence of GLM...
+	By just knowing what distribution Y has & what factors drive that change (mostly it will  be linear... I think) you can model it by minimizing the likelihood function... because you know the pdf once you identify the distribution. Its so much powerful than regression.
+
+
+
+
+
+Quantile regression is more robust to outliers in Y because we are computing quantile instead of mean. So incase there is an outlier in Y the conditional mean is affected by that outlier(example extremely low load factor on some day)
+
+
+
+
+
+What happens to the prediction interval of quantile regression & whzt does it represents
+
+
+
+Non-parametric quantile regression is like moving average?
+
+
+each variable can have a lambda
+
+
+How is non-parametric regression fitted
+
+
+
+
+Should have used quantile regression in IndiGo would have got better results
+
+
+
+
+
+
+Quantile Regression
+
+	See this: https://support.sas.com/resources/papers/proceedings17/SAS0525-2017.pdf
+
+	- The increasing complexity of data in research and business analytics requires versatile, robust, and scalable methods of building explanatory and predictive statistical models. Quantile regression meets these requirements by **fitting conditional quantiles of the response with a general linear model that assumes no parametric form for the conditional distribution of the response**.  
+	- It gives you information that you would not obtain directly from standard regression methods. Quantile regression yields valuable insights in applications such as risk management, where answers to important questions lie in modeling the tails of the conditional distribution.  
+	- Furthermore, quantile regression is capable of modeling the entire conditional distribution; this is essential for applications such as ranking the performance of students on standardized exams.  
+	- practical and advantageous for large data
+
+	- Although quantile regression is most often used to model specific conditional quantiles of the response, its full potential lies in modeling the entire conditional distribution.  
+	- Quantile regression does not assume a particular parametric distribution for the response, nor does it assume a constant variance for the response, unlike least squares regression.  
+	The following figure expains:
+		- presents an example of regression data for which both the mean and the variance of the response increase as the predictor increases. 
+		- The line represents a simple linear regression fit.
+
+	![Variance of Customer Lifetime Value Increases with Maximum Balance](C:\MyDisk\MDS\DSCI_562\Variance_Y_Quantile_Regression.jpg)
+
+	- Least squares regression for a response Y and a predictor X models the conditional mean $$E[Y|X]$$, but it does not capture the conditional variance $$Var[Y|X]$$, much less the conditional distribution of Y given X.  
+	- Quantile regression gives you a principled alternative to the usual practice(this is also wrong because we are transforming the response) of stabilizing the variance of heteroscedastic data with a monotone transformation h(Y) before fitting a standard regression model. Instead GLM should be used to correctly capture the conditional mean, but I think That won't be as good as quantile.  
+	- Depending on the data, it is often not possible to find a simple transformation that satisfies the assumption of constant variance.  
+	- Amazing thing is that you can transform the response fit any model... get the results and transform back because supports that kind of framework.  
+
+	![Variance of Customer Lifetime Value Increases with Maximum Balance](C:\MyDisk\MDS\DSCI_562\Quantile_vs_Linear_Regression.jpg)
+
+	- Very interesting question that can be answered by quantile regression.
+		- Consider Mary with an exam score of 1948 which is the 90th percentile in the whole group, consider a second student named Michael, who took the exam and scored 1617 points. 
+		- Michael’s quantile level is F(1617)= 0.5, so you might conclude that Mary performed better than Michael. However, if you learn that Mary is 17 and Michael is 12, then the question becomes, How did Mary and Michael perform relative to the other students in their age groups?
+		- The answer is given by their respective conditional quantile levels, which are F(1948 | Age=17) and F(1617 | Age=12).
+
+
+[Quantile Regression Vignette](https://cran.r-project.org/web/packages/quantreg/vignettes/rq.pdf)
+
+- We can provide contraints on variables in quantile regression. It can be given inside the `qss` function with the `constraint` argument. 	"N","I","D","V","C" "VI","VD","CI","CD" for none, increasing, decreasing, convex, concave, convex and increasing, etc.
+
+
+
+In R (saw this in quantile regression vignette) you can do some `latex` operation to get output that can be copy pasted in markdown documents.  
+
+
+Spline function that I used at IndiGo:
+	inv_spline_fun <- splinefun(old_f, crd, method = "monoH.FC")
+
+
+
+
+
+
+
+
+### Survival Analysis
+
+
+Insurvival distribution its not straightforward to do the MLE because the dat is censored. 
+
+
+
+Kaplan meir is a non-parametric estimation in which we estimate the survival curve. 
+
+For parametric method we assume the weibull distribution and we get a smoother curve. 
+
+
+Out of CDF, PDF, survival, hazard if one is known everything is known. 
+
+
+
+
+
+
+
+
+
+
+
+
+# 1.1
+
+mydata <- mydata %>% filter(!(ph.ecog==3 | is.na(ph.ecog)))
+
+
+
+
+right censoring is when the event hasn't happened and the observation period has ended. 
+left censoring is when the event has already happened but we don't know when it happened. 
+There is interval censoring also which includes both. 
+And we need time variable in survival analysis that is why need the start point, so it depends on the context where we might use this kind of information. 
+
+
+
+
+
+
+
+Good link about censoring:
+	http://math.usu.edu/jrstevens/biostat/projects2013/pres_LeftTruncation.pdf
+
+
+
+
+
+
+
+vglm will take the last class as the base class. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## I can add -1 in the model formula to make intercept as 0 and for binary varaibles all the dummy variables will be there
+	formul = Y~X+categorical_var -1
+
+
+
+
+
+
+what if there is correlation between groups
+	If there is some additional level of grouping that exists then we should create another grouping. For ex- there is some additional factor like type of company... like banking & operations. 
+
+what if the distribution is not normal
+	We can do GLM with different distribution. Need to check if we can do similar thing by using similar formula in the glm function. 
+
+the PI of the a seperate regression model shoulfd be equal to the random effect + var
+	The PI 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+setwd("C:/MyDisk/MDS/DSCI_562/DSCI_562_lab4_sverma92")
+library(data.table)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(lme4))
+
+
+sleep <- read_csv("data/sleep_data.csv", col_types = cols())
+setDT(sleep)
+
+# 1.1
+temp <- sleep %>% select(-day) %>% gather(key = "var_name", value="category", -time_to_sleep)
+
+temp %>% ggplot(aes(x=category, y=time_to_sleep)) + geom_violin() + facet_wrap(~var_name, scales = "free", nrow = 3)
+
+
+
+# 1.2.1
+# Fit a linear model that determines the effect of BBG on the average person’s time to fall asleep. Allow for the fact that it takes some people longer to fall asleep than others (which variable should you also consider for this?), and ignore age. What’s the effect of BBG? Also provide a 95% CI.
+
+model_lm <- lm(time_to_sleep ~ method, data = sleep)
+
+temp <- confint(model_lm, level=0.95)
+print(temp[rownames(temp)=="methodglasses",])
+
+
+The effect of `BBG` on the `time_to_sleep` is negative. Based on the sample data collected from $16$ volunteers the average `time_to_sleep` decreases with BBG glasses by ~4.9 seconds. The 95% confidence interval for this decreases is given above (-9.5 seconds to -0.3 seconds). 
+
+
+
+# 1.2.2
+# How would we modify the model to allow for the fact that BBG’s have a unique effect on each individual? Why would we not want to do this? (Hint: remember the objective of the study.)
+
+model_lm_slope <- lm(time_to_sleep ~ method*volunteer, data = sleep)
+coef(model_lm_slope)
+
+
+To incorporate the variability in the impact of BBG for different volunteers we would have to create different slopes (change in `time_to_sleep` by switching to BBG) for differnt volunteers. We should not do this because the objective of the study was to see the impact of BBG in general and not specific to a particulat individual, by changing the model we are making it specific to those 16 volunteers only. 
+
+To incorporate the variability in the impact of BBG for different volunteers we would have to create random effect for the slope (change in `time_to_sleep` by switching to BBG) as well. We should not do this because the objective of the study was to see the impact of BBG in general and not specific to a particulat individual, by changing the model we are making it specific to those 16 volunteers only. 
+
+
+
+# 1.3 
+
+
+
+# 1.4.1
+model_intercept <- lmer(time_to_sleep ~ method + (1 | volunteer), data = sleep)
+coef(model_intercept)
+
+
+
+
+
+model_slope <- lmer(time_to_sleep ~ method + (method | volunteer), 
+                        data = sleep)
+coef(model_slope)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
