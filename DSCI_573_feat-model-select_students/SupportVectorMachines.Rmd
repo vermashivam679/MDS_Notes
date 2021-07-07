@@ -1,0 +1,121 @@
+---
+title: "Support Vector Machines"
+author: "Shivam Verma"
+date: "20/01/2020"
+output:
+  html_document:
+    pandoc_args: --webtex
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<img src='SVM1.jpg' />
+<img src='SVM4.jpg' />
+
+<img src='SVM15.jpg' />
+
+
+## Maximum Margin Classifier 
+
+- When we use the threshold that gives us the largest margin to make classification. 
+
+<img src='SVM3.jpg' />
+
+
+## Support Vector Classifier aka Soft Margin Classifier 
+
+- When we use a Soft Margin to determine the location of a threshold. 
+- THe observations on the edge and within the soft margin are called Support Vectors. 
+
+<img src='SVM5.jpg' />
+<img src='SVM6.jpg' />
+<img src='SVM7.jpg' />
+
+
+## Support Vector Machines
+
+<img src='SVM8.jpg' />
+
+<img src='SVM9.jpg' />
+<img src='SVM11.jpg' />
+
+
+
+### Polynomial Kernel 
+
+The Polynomial Kernel systematically increases dimensions by setting d, the degree of the polynomial. And apparently uses Cross-Validation to get d. 
+
+<img src='SVM12.jpg' />
+<img src='SVM13.jpg' />
+<img src='SVM14.jpg' />
+
+
+
+### Kernel Trick 
+
+- The trick to calculate the high-dimensional relationships without actually transforming the data to the higher dimension, is called the kernel trick. The kernel trick reduces the amount of computation requried for SVM by avoiding the math that transforms the data from low to high dimensions. 
+
+<img src='SVM21.jpg' />
+<img src='SVM22.jpg' />
+<img src='SVM23.jpg' />
+
+
+### Radial Kernel, Radial Basis Function(RBF) 
+
+
+<img src='SVM16.jpg' />
+<img src='SVM17.jpg' />
+<img src='SVM18.jpg' />
+<img src='SVM19.jpg' />
+<img src='SVM20.jpg' />
+
+
+- When predicting the RBF kernel behaves like a weighted nearnest neighbor model. 
+- Gamma scales the squared distance, and thus, it scales the influence. 
+
+- What is a radial basis function (RBF)?: A set of non-parametric bases that depend on distances to training points. 
+- Similar to polynomial basis, we transform $X$ to $Z$ 
+
+- Gaussian RBFs are universal approximators. 
+- Enough bumps can approximate any continuous function to arbitrary precision. 
+
+- Example: Consider $X_{train}$ with three examples: $x_1$, $x_2$, and $x_3$ and 2 features and $X_{test}$ with two examples: $\tilde{x_1}$ and $\tilde{x_2}$ 
+
+$$\text{Transform } X_{train} = \begin{bmatrix} 1 & 0\\ 2 & 1\\ 1 & 2\end{bmatrix} \text{ to } Z_{train} = \begin{bmatrix} g\lVert x_1 - x_1\rVert & g\lVert x_1 - x_2\rVert & g\lVert x_1 - x_3\rVert\\g\lVert x_2 - x_1\rVert & g\lVert x_2 - x_2\rVert & g\lVert x_2 - x_3\rVert\\g\lVert x_3 - x_1\rVert & g\lVert x_3 - x_2\rVert & g\lVert x_3 - x_3\rVert\end{bmatrix}$$  
+
+$$\text{Transform } X_{test} = \begin{bmatrix} 2 & 1\\ 1 & 1 \end{bmatrix} \text{ to } Z_{test} = \begin{bmatrix} g\lVert \tilde{x_1} - x_1\rVert & g\lVert \tilde{x_1} - x_2\rVert & g\lVert \tilde{x_1} - x_3\rVert\\g\lVert \tilde{x_2} - x_1\rVert & g\lVert \tilde{x_2} - x_2\rVert & g\lVert \tilde{x_2} - x_3\rVert\\\end{bmatrix}$$  
+
+- Have $n$ features, with feature $j$ depending on distance to example $i$.
+- Most common $g$ is Gaussian RBF. $\sigma$ is a hyperparameter that controls the width of the bumps. 
+$$g(x_i - x_j)=\exp\left(-\frac{\lVert x_i - x_j\rVert^2}{2\sigma^2}\right)$$
+- Prediction in gaussian RBFs
+    
+$$\hat{y_i} = w_1 \exp\left(\frac{-\lVert x_i - x_1\rVert^2}{2\sigma^2}\right) +  w_2 \exp\left(\frac{-\lVert x_i - x_2\rVert^2}{2\sigma^2}\right) + \dots + w_n \exp\left(\frac{-\lVert x_i - x_n\rVert^2}{2\sigma^2}\right)
+    = \sum_{j = 1}^n w_j \exp\left(\frac{-\lVert x_i - x_j\rVert^2}{2\sigma^2}\right) $$
+
+
+- Could then fit least squares with different $\sigma$ values. 
+- Flexible bases that can model any continuous function. 
+- But with $n$ data points RBFs have $n$ basis functions. 
+- How do we avoid overfitting with this huge number of features?: We regularize $w$ and use validation error to choose $\sigma$ and $\lambda$. 
+- Expensive at test time: needs distance to all training examples. 
+
+
+When training an SVM with the Radial Basis Function (RBF) kernel, two parameters must be considered: C and gamma. The parameter C, common to all SVM kernels, trades off misclassification of training examples against simplicity of the decision surface. A low C makes the decision surface smooth, while a high C aims at classifying all training examples correctly. gamma defines how much influence a single training example has. The larger gamma is, the closer other examples must be to be affected. 
+
+Proper choice of C and gamma is critical to the SVM’s performance. One is advised to use sklearn.model_selection.GridSearchCV with C and gamma spaced exponentially far apart to choose good values. 
+
+
+
+#### Using RBF with least squares: [KernelRidge](https://scikit-learn.org/stable/modules/generated/sklearn.kernel_ridge.KernelRidge.html)
+> sklearn.kernel_ridge.KernelRidge(alpha=1, kernel='linear', gamma=None, degree=3, coef0=1, kernel_params=None)
+
+> Kernel ridge regression.
+Kernel ridge regression (KRR) combines ridge regression (linear least squares with l2-norm regularization) with the kernel trick. It thus learns a linear function in the space induced by the respective kernel and the data. For non-linear kernels, this corresponds to a non-linear function in the original space.
+
+> The form of the model learned by KRR is identical to support vector regression (SVR). However, different loss functions are used: KRR uses squared error loss while support vector regression uses epsilon-insensitive loss, both combined with l2 regularization. In contrast to SVR, fitting a KRR model can be done in closed-form and is typically faster for medium-sized datasets. On the other hand, the learned model is non-sparse and thus slower than SVR, which learns a sparse model for epsilon > 0, at prediction-time.
+
+

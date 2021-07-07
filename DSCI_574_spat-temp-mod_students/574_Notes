@@ -1,0 +1,114 @@
+
+
+-0.13 & 0.25
+
+
+Read this:
+	http://www.greenteapress.com/thinkbayes/thinkbayes.pdf
+
+
+
+Moving average is a non-parametric method
+
+
+
+LOESS smoothning is a good non-parametric metric method to capture trend. is it ?
+
+
+
+correlation is a measure of linear association not non-linear
+
+
+
+we make the series stationary because we want to capture the autocorrelation which is only a function of lag and not time 
+	if the series is not stationary then the ACF will also be a function of time (t). Its easier to model stationary series as opposed to non stationary. We can still build a model on non-stationary but it won't be a good one. 
+
+
+
+How does ARIMA compares with linear regression?
+	we can do but it won't be equipped with time-series tools to identify proper lags ACF metrics
+How does invertability ensures uniqueness? Does uniqueness mean convergent and unique?
+	not clear
+what if I have seasonal and trend components which ARIMA or SARIMA?
+	2 level of differencing if both are there (first seasonal then trend)
+
+
+AR & MA processes are interchangeable
+
+
+
+
+
+
+
+difference operator is just like differentiation. First-order differencing addresses linear trends, and employs the transformation zi = yi – yi-1. Second-order differencing addresses quadratic trends and employs a first-order difference of a first-order difference, namely zi = (yi – yi-1) – (yi-1 – yi-2), which is equivalent to zi = yi – 2yi-1+ yi-2.
+
+Seasonal differencing is a different kind of differencing: zi = (yi – yi-4) with a seasonal effect of period 4
+
+
+
+
+
+
+ARMA (p,q) can be converted to some AR(inf) because MA(q) should be covnerted to AR(inf)
+
+
+
+
+
+The equation shown in the lec6 (slide 40) for AR(2) model fitted on the differenced series looks off....
+	the differenced series should be fitted with an AR2 instead of fitting a slope and AR2
+
+
+
+
+There is something called heirachical time series
+
+
+
+
+A function that tests if an altair chart has the UBC theme applied to it adhering to the university's visual identity.
+
+
+
+
+
+Geo data
+
+Ys are assumed to be conditionally independent given the values of the process Zs. What does this mean?
+
+
+is h distance or is it like the number of locations in between... distance should make more sense
+
+How is intrinsic stationarity different from weak stationarity because both put same restrictions
+
+
+https://zoom.us/j/669543370
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

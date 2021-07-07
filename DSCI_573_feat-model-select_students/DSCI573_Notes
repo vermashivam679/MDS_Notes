@@ -1,0 +1,453 @@
+
+
+
+
+
+Optimization bias is when the model overfits on the validation dataset.
+	Cross validation can help solve this as well.
+	it automattically shrinks if the validation data is large
+
+
+divide the hyperparameter space to do gridsearch in important HP & randomised search for not so imp
+
+F1-Score
+	https://en.wikipedia.org/wiki/F1_score
+
+
+
+
+
+Awesome ROC Animations
+	https://github.com/dariyasydykova/open_projects/tree/master/ROC_animation
+
+	- AUC tells us the area under an ROC curve, and, generally, an AUC value over 0.7 is indicative of a model that can distinguish between the two outcomes well. An AUC of 0.5 tells us that the model is a random classifier, and it cannot distinguish between the two outcomes. The shape of an ROC curve changes when a model changes the way it classifies the two outcomes.
+	- Precision-recall curve also displays how well a model can classify binary outcomes. Similarly to the ROC curve, when the two outcomes separate, precision-recall curve will approach the top-right corner. Typically, a model that produces a precision-recall curve that is closer to the top-right corner is better than a model that produces a precision-recall curve that is skewed towards the bottom of the plot.
+	- Precision-recall curve is more sensitive to class imbalanace than an ROC curve. ROC curve tends to be more robust to class imbalanace that a precision-recall curve.
+	- When the standard deviation of one of the outcomes changes, an ROC curve and its AUC value also change.
+	- It might indicate that the model performance has increased, when, in fact, the prediction performance has worsened for e.g. at small false positive rates.
+	- My Understanding of the ROC curve: In a perfect model: 
+		- When everything is classified as 1 (the probability threshold is 0) then TPR is 1 & FPR is also 1.
+		- When we increase the threshold then TPR stays at 1 & FPR decreases.
+		- At a point when TPR is still 1 & FPR becomes 0 then we are classifying exactly the same number of 1s as the data has.
+		- Beyond that point FPR stays at 0 & TPR decreases until we are classifying no 1s & TPR also becomes 0.
+		- This describes a perfect shape of the ROC curve. For an imperfect model the shape is distorted but is similar to ideal shape.
+
+
+
+
+
+
+
+In case of X^2 & X there will be multicollinearity...
+	Weights will be adjusted in that case
+	https://stats.stackexchange.com/questions/147305/multicollinearity-in-polynomial-regression
+
+	https://www.researchgate.net/post/Is_it_necessary_to_correct_collinearity_when_square_terms_are_in_a_model
+		Multicollinearity is NOT a problem in your case. Multicollinearity has to be checked and problems have to be solved when you want to estimate the independent effect of two variables which happen to be correlated by chance. This is NOT your problem with your age and agesquared variables since you should never be interested in evaluating the effect of changing age without changing agesquared. So do not care about multicollinearity between one variable and a second variable which is a deterministic non linear function of the first one. Except in the case of perfect multocillinearity, which would be the case if you had only two different values for your age variable.
+
+		You can do a very simple thing:  1) subtract the mean of age from your original variable ; 2) after take the square of this de-meaned age; 3) regress you dependent var on the demeaned age and its square.  Now, you have reduced collinearity problem, furthermore the interpretation of the age-coefficient remains the same.
+
+
+
+a <- rnorm(100, 5)
+cor(a, a^2)
+
+a <- a-mean(a)
+cor(a, a^2)
+
+
+
+How degree of polynomial regression relates to the fundamental tradeoff
+
+
+
+
+
+To check if data is linearly seperable... we can do a simple test of creating a linear combination of it and check if it can sererate it just like we did it by hand.
+
+
+
+
+
+
+
+
+Funcking A:
+	https://scikit-learn.org/stable/modules/model_evaluation.html#roc-metrics
+
+
+
+
+
+Why would you keep both the variables when there is a correlation of -1 (varada said)
+
+
+
+When we do feature selection then in categorical variables there will be dummy variables.... but what if one category is selected but not the other?
+
+
+L0 norn is the indicator (0 or 1) for the presence of variable
+
+If we add a variable then we have to redice the loss function by $\lambda$ valiue  
+
+
+
+
+Conditional independence of
+A feature might be important but it might not be the cause
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lecture 5
+T/F
+
+TTFTF
+
+
+
+when we add L2 norm of W we are adding bias is our estimats but the variance goes dowwn because of bias-variance trade-off. 
+
+In regularizarion its very important to scale data because the weights are depenedent on the scale of the variables. 
+
+
+
+
+SVM RBF
+
+gamma is $\sigma$ in gaussian density & C is $1/\lambda$
+
+
+
+
+
+
+
+
+
+any type of regularization reduced the sensitivity of the coefficients that will result in smaller changes when change in variable is smaller. 
+
+
+
+
+
+
+L0 doesn't shrinks weights because if the weights reduce there is no reduction in the loss function but it does make the weights sparse(assign 0 weights)
+L2 only shrinks weights but not make it sparse because as the weights decrease the affect of lambda on that variable will lose and it will not further decrease that aggresively. 
+L1 does both
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Collinearity, Conditional independence, causation, 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+setwd("C:/MyDisk/MDS/DSCI_573/DSCI_573_lab4_sverma92")
+
+library(reticulate)
+repl_python()
+
+
+
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import QuantileTransformer, OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_selection import RFE
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+
+import time
+import altair as alt
+alt.data_transformers.enable('json')
+alt.renderers.enable('notebook')
+
+# 1
+mydata = pd.read_excel('default of credit card clients.xls', header=1)
+
+
+mydata['y'] = mydata['default payment next month']
+mydata = mydata.drop(columns=["ID", 'default payment next month'])
+
+col_names = mydata.columns
+
+cat_vars = ['SEX', 'EDUCATION', 'MARRIAGE', 'PAY_0', 'PAY_2',
+       'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6']
+
+response = ['y']
+
+num_vars = list(set(mydata.columns) - set(cat_vars + response))
+
+
+
+X_train, X_test, y_train, y_test = train_test_split(mydata.drop(columns='y'), mydata['y'], test_size=0.20, random_state=42)
+X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.20, random_state=42)
+
+print("Shape of training data is:", X_train.shape, ", validation is:", X_valid.shape, "and test is:", X_test.shape)
+
+
+
+
+
+
+# 2
+mydata = X_train.copy()
+mydata['y'] = y_train
+
+
+temp = {var: mydata[var].value_counts() for var in cat_vars}
+cat_eda = pd.DataFrame(temp)
+print("Univariate Exploration for Categorical Variables")
+print("--------------")
+print(cat_eda)
+
+
+
+probs = np.arange(0,1.05,0.05)
+temp = {var: np.round_(np.quantile(mydata[var], probs), decimals=2) for var in num_vars}
+num_eda = pd.DataFrame(temp)
+num_eda['Quantile'] = probs
+print("Univariate Exploration for Numerical Variables")
+print("--------------")
+print(num_eda)
+
+
+
+temp = [mydata.groupby([var]+response)[response].agg('count') for var in cat_vars]
+print("Response vs Categorical")
+print("--------------")
+print(temp)
+
+# same for numerical variables also
+
+
+# 3
+dummy_clf = DummyClassifier(strategy="most_frequent")
+dummy_clf.fit(X_train, y_train)
+
+dummy_clf.score(X_train, y_train)
+dummy_clf.score(X_valid, y_valid)
+
+
+
+
+# 4
+lr_clf = LogisticRegression()
+params = {'C': np.array([10.0**i for i in np.arange(-4, 5, 1)])}
+grid_clf = GridSearchCV(lr_clf, params, refit=True, cv=5, return_train_score=True)
+grid_clf.fit(X_train, y_train)
+
+
+
+Hyp_opt_result = pd.DataFrame(grid_clf.cv_results_)
+Hyp_opt_result = Hyp_opt_result[["param_C","mean_train_score","std_train_score","mean_test_score","std_test_score"]]
+Hyp_opt_result = Hyp_opt_result.melt(id_vars='param_C',
+                            value_vars=['mean_train_score', 'mean_test_score'],
+                            var_name="partition",
+                            value_name="accuracy")
+
+
+alt.Chart(Hyp_opt_result).mark_line().encode(
+        alt.X('param_C', axis=alt.Axis(title="Number of Features")), 
+        alt.Y('accuracy', axis=alt.Axis(title="Accuracy")), 
+        color = alt.Color('partition', legend=alt.Legend(title="Partition"))
+    ).configure_axisX(
+        labelFontSize = 15,
+        titleFontSize = 15
+    ).configure_axisY(
+        labelFontSize = 15,
+        titleFontSize = 15
+    ).properties(
+        title="Optimal Number of Features",
+        width=700,
+        height=400
+    )
+
+
+
+
+
+# 5
+preprocessor = ColumnTransformer(transformers=[
+    ('qt_transform', QuantileTransformer(random_state=0), num_vars),
+    ('ohe', OneHotEncoder(categories='auto', drop='first'), cat_vars)])
+
+# Fit and transform the training data
+X_train_tf = preprocessor.fit_transform(X_train)
+X_valid_tf = preprocessor.transform(X_valid)
+
+col_names_tf = (num_vars + list(preprocessor.named_transformers_['ohe'].get_feature_names(cat_vars)))
+
+X_train_tf = pd.DataFrame(X_train_tf.toarray(), index=X_train.index, columns=col_names_tf)
+X_valid_tf = pd.DataFrame(X_valid_tf.toarray(), index=X_valid.index, columns=col_names_tf)
+
+
+lr_clf = LogisticRegression()
+params = {'C': np.array([10.0**i for i in np.arange(-4, 5, 1)])}
+grid_clf = GridSearchCV(lr_clf, params, refit=True, cv=5, return_train_score=True)
+grid_clf.fit(X_train_tf, y_train)
+
+
+
+Hyp_opt_result = pd.DataFrame(grid_clf.cv_results_)
+Hyp_opt_result = Hyp_opt_result[["param_C","mean_train_score","std_train_score","mean_test_score","std_test_score"]]
+Hyp_opt_result = Hyp_opt_result.melt(id_vars='param_C',
+                            value_vars=['mean_train_score', 'mean_test_score'],
+                            var_name="partition",
+                            value_name="accuracy")
+
+alt.Chart(Hyp_opt_result).mark_line().encode(
+        alt.X('param_C', axis=alt.Axis(title="Number of Features")), 
+        alt.Y('accuracy', axis=alt.Axis(title="Accuracy")), 
+        color = alt.Color('partition', legend=alt.Legend(title="Partition"))
+    ).configure_axisX(
+        labelFontSize = 15,
+        titleFontSize = 15
+    ).configure_axisY(
+        labelFontSize = 15,
+        titleFontSize = 15
+    ).properties(
+        title="Optimal Number of Features",
+        width=700,
+        height=400
+    )
+
+
+
+
+
+# 6 & 7
+
+classifiers = {
+    # 'knn'           : KNeighborsClassifier(),
+    'random forest' : RandomForestClassifier(),
+    'SVM'           : SVC(),
+    'logistic'		: LogisticRegression(),
+    'sklearn NN'    : MLPClassifier(learning_rate='adaptive') 
+
+}
+
+param_classifiers = {
+    # 'knn'           : {'n_neighbors': np.arange(4, 7, 1)},
+    'random forest' : {'n_estimators': np.arange(100,210,10), 'max_depth':np.arange(5,10,1), 'class_weight':['balanced', None]}, 
+    'SVM'           : {'C': np.array([10.0**i for i in np.arange(-3, 3, 1)]), 'gamma': np.array([10.0**i for i in np.arange(-3, 3, 1)])},
+    'logistic'		: {'C': np.array([10.0**i for i in np.arange(-4, 5, 1)])},
+    'sklearn NN'    : {'hidden_layer_sizes':[(100), (50,50)], 'activation':['logistic', 'relu']} 
+}
+
+train_scores = dict()
+valid_scores = dict()
+training_times = dict()
+df_list = list()
+
+# classifier_obj = classifiers['random forest']
+# param = param_classifiers['random forest']
+for classifier_name, classifier_obj in classifiers.items():
+    print("Fitting", classifier_name)
+    param = param_classifiers[classifier_name]
+    t = time.time()
+
+	grid_clf = RandomizedSearchCV(classifier_obj, param, refit=True, cv=3, return_train_score=True)
+	grid_clf.fit(X_train_tf, y_train)
+
+    CV_result = pd.DataFrame(grid_clf.cv_results_)[["params","mean_train_score","std_train_score","mean_test_score","std_test_score"]]
+    CV_result['classifier'] = classifier_name
+	CV_result['BestOne'] = CV_result['params']==grid_clf.best_params_
+
+    df_list.append(CV_result)
+
+    training_times[classifier_name] = time.time() - t
+    train_scores[classifier_name] = grid_clf.score(X_train_tf, y_train)
+    valid_scores[classifier_name] = grid_clf.score(X_valid_tf, y_valid)
+
+
+CV_results = pd.concat(df_list)
+
+data = {"train acc": train_scores, "valid acc" : valid_scores, "training time (s)" : training_times}
+clf_summary = pd.DataFrame(data, columns=data.keys())
+clf_summary.index = list(classifiers.keys())
+clf_summary
+
+
+# 8
+FE_estimator = LogisticRegression()
+selector = RFE(FE_estimator, n_features_to_select = 15)
+selector = selector.fit(X_train_tf, y_train)
+
+select_cols = X_train_tf.columns[selector.support_]
+
+
+clf = LogisticRegression()
+clf.fit(X_train_tf[select_cols], y_train)
+clf_err_tr = 1-clf.score(X_train_tf[select_cols], y_train)
+clf_err_test = 1-clf.score(X_valid_tf[select_cols], y_valid)
+
+
+
+
+
+
+
+[Group Repo](https://github.com/UBC-MDS/DSCI522_309)  
+[Project Report](https://ubc-mds.github.io/DSCI522_309/doc/final_report.html)  
+[Release 4.0](https://github.com/UBC-MDS/DSCI522_309/tree/v4.0)  
+
+
+
+
+
+
+
+
+

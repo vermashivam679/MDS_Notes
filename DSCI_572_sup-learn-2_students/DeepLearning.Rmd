@@ -1,0 +1,545 @@
+---
+title: "Deep Learning"
+author: "Shivam Verma"
+date: "20/01/2020"
+output: 
+  html_document:
+    toc: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Gradients
+
+- A gradient is just a box holding all the $d$ partial derivatives (assuming you have a function of $d$ variables). For example, when $d=3$:
+ 
+$$\nabla f(x,y,z)=\begin{bmatrix}\frac{\partial f}{\partial x}(x,y,z)\\ \frac{\partial f}{\partial y}(x,y,z) \\\frac{\partial f}{\partial z}(x,y,z)\end{bmatrix}$$
+
+Or, more generally, if $x$ is a vector then
+
+$$\nabla f(x)=\begin{bmatrix}\frac{\partial f}{\partial x_1}(x)\\ \frac{\partial f}{\partial x_2}(x) \\ \vdots \\ \frac{\partial f}{\partial x_d}(x)\end{bmatrix}$$
+
+
+- Thus, a partial derivative is a function that has the same mapping as the original, e.g. $\mathbb{R}^3\rightarrow \mathbb{R}$ ("R three to R").
+- A gradient is a function that maps from the original input space to the same space, e.g. $\mathbb{R}^3\rightarrow \mathbb{R}^3$ ("R three to R three").
+
+
+Since a gradient is a vector, we can talk about its magnitude and direction.
+  - The magnitude is $\|\nabla f\|$ and tells us **how fast things are changing**.
+  - The direction is $\frac{\nabla f}{\|\nabla f \|}$ and tells us **the direction of fastest change** or the steepest direction.
+
+**Why is it the direction of fastest increase?**
+
+- A proof that the gradient is the best direction. Let's say we are at position $x$ and we move by an infinitesimal (i.e. extremely tiny) $v$, which is a vector having components $v_1, v_2, \ldots v_d$. The change in $f$ from moving from $x$ to $x+v$ is $\frac{\partial f}{dx_1} v_1 + \frac{\partial f}{dx_2} v_2 + \ldots \frac{\partial f}{dx_d} v_d$, where all the partial derivatives are evaluated at $x$ (I believe this is related to the "total derivative"). In other words, the change in $f$ is the dot product $\nabla f \cdot v$. 
+
+- So now the question is, what vector $v$ of fixed length maximizes $\nabla f \cdot v$. The answer is a vector that points in the same direction as $\nabla f$. (That's a property of the dot product, and is evident by the definition: $a \cdot b = \| a \| \|b \| \cos(\theta)$. Since $\| \nabla f \|$ and $\|v\|$ are fixed in our case, to maximize this we want to maximize $\cos(\theta)$, which means we want $\cos(\theta)=1$ meaning $\theta=0$, or the angle between the vectors is $0$).
+
+
+
+### Loss functions
+
+**Least Squares for Linear Regression:** $$\min_w \sum_{i=1}^n \left(w^Tx_i - y_i\right)^2$$  
+  - The mean is the number that minimizes the squared loss between itself and the set of numbers.  
+**Robust Linear Regression:** $$\min_w \sum_{i=1}^n \left| w^Tx_i - y_i \right|$$  
+  - The median is the number that minimizes the absolute loss between itself and the set of numbers.  
+
+**Logistic Regression:** 
+```
+def loss_lr(w, X, y, λ=1e-3):
+    return np.sum(np.log(1 + np.exp(-y*(X@w))),axis=0) + λ*np.sum(w**2,axis=0)
+
+# Same Output for below 2 codes
+loss_lr(np.squeeze(lr.coef_), X, y)
+
+from sklearn.metrics import log_loss
+log_loss(y, lr.predict_proba(X), normalize=False)
+```
+
+**Support Vector Machines**
+```
+# In practice, we need to use different methods to minimize these functions, because the SVM loss is non-smooth.
+def loss_svm(w, X, y, λ=1e-3):
+    return np.sum(np.maximum(0,1-y*(X@w)),axis=0) + λ*np.sum(w**2,axis=0)
+```
+
+
+### Gradient descent notation
+
+Gradient descent is defined as follows: This is a multivariate sequence because $w$ is a vector. Here, $(t)$ denote the $t_{th}$ iteraction.  
+
+$$w^{(t+1)}=w^{(t)}-\alpha^{(t)}\nabla f\left(w^{(t)}\right)$$
+
+#### Gradient descent as a sequence
+
+- Gradient descent defined a sequence of iterates. 
+- It needs an initial value too, for example by setting $w=0$ or some random numbers. 
+  - This choice is important, because setting $w=0$ can cause problems. 
+- Key idea: we choose the sequence carefully so that it _converges_ to a global minimum of $f$. 
+- One can show that this happens under some reasonable conditions, like sufficiently small $\alpha$, convex and smooth $f$. 
+
+
+This (Python) function can be used to numerically optimize (mathematical) functions. 
+
+```
+from scipy.optimize import minimize
+def f(x):
+    return (x-3)**2
+minimize(f, 0).x
+
+def f_wrapper(w):
+    return f(w, X, y)
+
+def f_grad_wrapper(w):
+    return f_grad(w, X, y)
+
+minimize(f_wrapper, w_init, jac=f_grad_wrapper).x
+minimize(f, w_init, jac=f_grad, args=(X,y)).x
+
+```
+
+- `minimize` is a Python function that takes in _another Python function_. 
+- We also had to pass in a starting guess. 
+- Why the `.x` at the end? That's because `minimize` returns a bunch of stuff & the solution is one of them. 
+- Output has `nfev` - that is short for "number of function evaluations". 
+  - In general, the speed of the optimize will be dominated by the function evaluations, so we want this number to be small. 
+  - Mike: "if you have $1000$ weights it should be around $1000$ times faster!" 
+
+- Having the gradient is very useful - practically essential - in most continuous optimization problems. 
+- With `scipy.optimize.minimize` this is done through the `jac` argument. 
+  - The above function worked without the gradient because it is approximating the gradient by calling the loss function a bunch of times. 
+  - While the `w` argument of the `f_grad` will change during the optimization, `X` and `y` stay the same. To resolve this we can either create a wrapper function or use the `args` keyword
+
+
+### Logistic regression
+
+- In ML, we encode $y$ as $+1$ and $-1$, as opposed to $1$ and $0$. This makes our math a bit cleaner. 
+- We combine our features and coefficients with a dot product, that is $w_0 + w_1x_1 + w_2x_2 + \ldots + w_dx_d$. 
+- With linear regression, we can write the predictions very succinctly as $Xw$. This is matrix multiplication. 
+- We take each row of $X$ and dot-product it with $w$. So the result is a vector of all our predictions. 
+- The decision boundary is a hyperplane dividng the feature space (aka data space) in half.
+- You can think of the coefficients as controlling the orientation of the boundary.
+
+- When you take $w^Tx$, this is what I call the "raw model output".
+  - For linear regression this would have been the prediction.
+  - For logistic regression, you check the **sign** of this value. If positive, predict $+1$; if negative, predict $-1$. I call these "hard predictions". 
+    - You can also have "soft predictions", aka predicted probabilities. To convert the raw model output into probabilities, instead of taking the sign, we apply the sigmoid. 
+    - The sigmoid function "squashes" the raw model output from any number to the range $[0,1]$. The threshold $w^Tx=0$ corresponds to $p=0.5$. 
+
+#### Loss function
+- The squared error $f(w)=\sum_{i=1}^n (w^Tx_i-y_i)^2$ doesn't make sense here. Key idea: multiply $y_iw^Tx_i$. We always want this quantity to be positive! 
+- So, we want a loss that's sort of like $-\sum_{i=1}^n y_iw^Tx_i$. By making this small, we encourage the model to make correct predictions.  
+- The above loss does not quite work out (I believe it has no minimum in most cases), but we do something similar instead:
+  
+$$f(w)=\sum_{i=1}^n\log\left(1+\exp(-y_iw^Tx_i)\right)$$
+
+- The key idea here is that this function gets smaller as $y_iw^Tx_i$ gets larger, so it encourages correct classification. 
+- So, why not use the error rate as the loss, and directly maximize accuracy? 
+  - Because it's not a smooth function, which makes it hard to optimize. 
+
+
+
+## Stochastic Gradint Descent
+
+
+- Stochastic gradient descent (SGD) is a variant of gradient descent in which a subset of data is used at each iteration.
+- This subset of data is called a "batch" or "minibatch". 
+- SGD has different theoretical properties than GD, which we won't go into here. 
+- __Iteration__: An iteration is when each time you update the weights. 
+- __epoch__: an epoch is the number of iterations it takes to look at $n$ examples. 
+  - People also say things like "full pass through the dataset" or "you have looked at all training examples once". But our definition will be a bit more precise, with the "replacement" method as well. 
+- We could say for GD that each iteration is an epoch. # of iterations = # of epochs. Because with GD, each iteration involves computing the gradient, which involves a sum over all examples. Thus we say each iteration involves a "full pass through the dataset". 
+- $$\frac{\text{number of iterations}}{\text{number of epochs}}=\frac{n}{\text{batch size}}$$
+
+- __Termination Condition__: We don't use the same termination condition as gradient descent, for several reasons, including slow to check the full gradient, we may have lower expectations about convergence when using such big data sets. 
+  - So often we just want to specify a number of iterations. 
+
+- __Learning rate__: According to the theory, we need to decrease $\alpha$ over time, following certain guidelines. Also in reality, we use fancier variants of SGD, such as Adam, which set $\alpha$ in a more sophisticated way. [See here for more](https://ruder.io/optimizing-gradient-descent/). When $\alpha$ is too big, the sequence never converges. 
+
+### Data Subset Approaches for SGD
+
+1. __Approach 1__: you shuffle the dataset and pre-divide it into batches, like cross-validation. This is fully without replacement.
+2. __Approach 2__: you just sample a batch each time, so you might have the same example in both batch 1 and batch 2. But each batch itself is sampled without replacement.
+3. __Approach 3__: like Approach 2, but even each batch is sampled with replacement, so you might have the same example twice in batch 1.
+
+
+#### Advantages of SGD
+
+- It is often much faster for big datasets. "Why spend all that time picking a direction for your step? An approximate direction seems fine". 
+- It's a generaliztaion of GD. 
+- If your training data does not fit into memory, SGD still works - you just need to fit a batch in memory. 
+
+
+
+## Backpropagation
+
+Our goal with backpropagation is to update each of the weights in the network so that they cause the actual output to be closer the target output, thereby minimizing the error for each output neuron and the network as a whole.  
+
+Using this method we can update weights based on only 1 row. I think, that is why stochastic gradient descent works so well on this. Also, when the loss is the sum of individual losses from each row then $\eta$ will have a scale dependent on data therefore they take average instead of sum so that $\eta$ is on unit scale.  
+
+
+![Backpropagation](BackProp_1.jpg)
+[Source](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/)
+
+### Forward Pass
+
+$net_{h1} = w_1 * i_1 + w_2 * i_2 + b_1 * 1$
+
+$out_{h1} = \frac{1}{1+e^{-net_{h1}}}$
+
+$net_{o1} = w_5 * out_{h1} + w_6 * out_{h2} + b_2 * 1$
+
+$out_{o1} = \frac{1}{1+e^{-net_{o1}}}$
+
+$E_{total} = \sum \frac{1}{2}(target - output)^{2}$
+
+
+### Backward Pass
+
+#### For output layer
+
+$\frac{\partial E_{total}}{\partial w_{5}} = \frac{\partial E_{total}}{\partial out_{o1}} * \frac{\partial out_{o1}}{\partial net_{o1}} * \frac{\partial net_{o1}}{\partial w_{5}}$
+
+$\frac{\partial E_{total}}{\partial out_{o1}} = -(target_{o1} - out_{o1})$
+
+$\frac{\partial out_{o1}}{\partial net_{o1}} = out_{o1}(1 - out_{o1})$
+
+$\frac{\partial net_{o1}}{\partial w_{5}} = out_{h1}$
+
+Therefore,  
+$\frac{\partial E_{total}}{\partial w_{5}} = -(target_{o1} - out_{o1}) * out_{o1}(1 - out_{o1}) * out_{h1} = \delta_{o1} * out_{h1}$
+
+New set of weights,  
+$w_5^{+} = w_5 - \eta * \frac{\partial E_{total}}{\partial w_{5}}$
+
+
+#### For Hidden Layer
+
+$\frac{\partial E_{total}}{\partial w_{1}} = \frac{\partial E_{total}}{\partial out_{h1}} * \frac{\partial out_{h1}}{\partial net_{h1}} * \frac{\partial net_{h1}}{\partial w_{1}}$
+
+First part can be written as,  
+$\frac{\partial E_{total}}{\partial out_{h1}} = \frac{\partial E_{o1}}{\partial out_{h1}} + \frac{\partial E_{o2}}{\partial out_{h1}}$
+
+$\frac{\partial E_{o1}}{\partial out_{h1}} = \frac{\partial E_{o1}}{\partial out_{o1}} * \frac{\partial out_{o1}}{\partial net_{o1}} * \frac{\partial net_{o1}}{\partial out_{h1}} = -(target_{o1} - out_{o1}) * out_{o1}(1 - out_{o1}) * w_5 = \delta_{o1} * w_5$
+
+Other parts,  
+$\frac{\partial out_{h1}}{\partial net_{h1}} = out_{h1}(1 - out_{h1})$
+
+$\frac{\partial net_{h1}}{\partial w_1} = i_1$
+
+Therefore,  
+$\frac{\partial E_{total}}{\partial w_{1}} = (\sum\limits_{o}{\delta_{o} * w_{ho}}) * out_{h1}(1 - out_{h1}) * i_{1}$
+
+
+
+## CNN
+
+
+
+### 1D signals _with multiple features_
+
+- We get a _vector of measurements_ stepping over time, or in other words a _vector of features_, e.g. wind speed, rainfall, temperature, etc. each day in Vancouver.
+- This means _each training example is a sequence of vectors or, in other words, a 2D array_. 
+- Now, if we want to store our entire dataset in one variable, it's a 3D array: (number of training examples) $\times$ (number of steps in sequence) $\times$ (number of features). Before, $X$ was just 2D, with dimensions $n \times d$. Let's use $T$ to denote the number of steps. So then $X$ is $n \times T \times d$.
+
+```
+# | Day | Temp | Wind speed | Rainfall |
+# |-----|-----|---------------|-------|
+
+day1 = [20,0,0]
+day2 = [10,5,4]
+day3 = [12,6,4]
+day4 = [12,1,0]
+
+x = np.vstack((day1,day2,day3,day4))
+x
+```
+
+### 1D convnets: `Conv1D` layer
+
+- **High level overview**: a `Conv1D` layer transforms an example (roughly) from $T \times d_0$ to $T \times d_1$. This is like a `Dense` layer (from $d_0$ to $d_1$), but with this extra $T$ dimension along for the ride. 
+- Important point: with CNNs, **the filters are the paramameters we're learning** (aka weights). 
+- In a 1D convolutional layer, you have some number of filters (a hyperparameter). 
+- Each filter has a size (a hyperparameter), which is the same for all filters in the layer. 
+- In CNNs the number of features explicitly does NOT depend on the number of pixels, but rather is just equivalent to the number of channels. 
+
+Example: 5 filters, each of size 3. The signals are of length 100 with 1 feature. **We're going from 1 feature to 5 features.**
+In symbols, $d_0=1$, $d_1=5$, $T=100$, and $k_0=3$ (let's use $k$ to denote the filter sizes).
+
+
+```{python CNN 1D ConvNet, eval=FALSE}
+
+model = Sequential()
+model.add(Conv1D(5, kernel_size=3, input_shape=(100,1), padding='same'))
+#                ^d_1           ^k_0            ^T  ^d_0 
+model.summary()
+
+out_example = model.predict(x[None,:,None])
+plt.plot(x, '--k');
+plt.plot(out_example[0]);
+plt.title("Output of applying the Conv1D layer");
+
+
+### 1D convnets: end-to-end example
+model = Sequential()
+model.add(Conv1D(5, kernel_size=3, input_shape=(100,2), padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=2)) # T is reduced by this factor, i.e. 100 to 50
+model.add(Conv1D(7, kernel_size=3, padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Flatten())
+model.add(Dense(10)) # for 10-class classification `model.add(Dense(1))` # for regression
+# one could add more Dense layers here
+model.summary()
+
+x = np.random.rand(1,100,2) # n=1, T=100, d=2
+x.shape
+model.predict(x) # just a number
+
+```
+
+- Shape of 1 Conv1D: $(k_0, d_0, d_1)$, Code: `model.get_weights()[0].shape` 
+- Output shape is: $(n, T, d_1)$. 
+- Input Shape: $(n, T, d_0)$. 
+- `MaxPooling1D` is a common type of pooling i.e., like a moving average max. 
+  - Pooling does not introduce parameters. 
+  - Pooling changes $T$, not $d$; this is the first time we changed $T$. 
+  - It is said to improve "translation invariance", which means that, say, the digit can be anywhere in the image. 
+  - It helps to reduce the number of parameters. 
+- 1D convnets: flattening with `Flatten`. We include one (or more) `Dense` layers at the end. 
+  - Eventually, we usually want to do some regression or classification. 
+  - Say we'd doing 10-class classification of MNIST digits. Then we want to get from the current state (e.g. $T\times d$) to just a vector of length 10. 
+
+
+#### Parameter flattening vs. data flattening
+
+**Confusion warning**: We have discussed two types of flattening that are totally different.
+
+- Parameter flattening for optimization software: in neural networks, the parameters are spread across a bunch of matrices and vectors. We have to flatten the matrices and combine everything into one big flat vector. See lab 3 Exercise where you implemented `combine_params`. This is needed for regular (`Dense`) neural nets and has nothing to do with CNNs specifically.
+- Data flattening: 
+  - "Visible" data flattening: When using regular (`Dense`) neural networks for images, we have to flatten the images into vectors. This is because the `Dense` layer takes in a 1D feature vector.
+  - "Hidden" data flattening: **This is the one we just did with a `Flatten` layer**. Here, we are flattening the hidden values, not the original features, but it's for the same reason: we are feeding into a `Dense` layer and it expects a 1D input. This type of flattening (of hidden values) is _not_ needed in regular neural nets but is needed with CNNs.
+
+
+
+
+```{python CNN Most basic element, eval=FALSE}
+
+# FCN
+W = np.random.randn(5,2)
+x = np.random.rand(2)
+
+def FCN_layer_loop_full(W, x):
+    out_dim, in_dim = W.shape # get the shapes
+    out = np.zeros(out_dim)   # initialize the output vector
+    for i in range(out_dim):  # loop through each output circle in our circle/arrow diagram
+        for j in range(in_dim):  # loop through each input circle in our circle/arrow diagram
+            out[i] += W[i,j]*x[j]  # multiply x[j] and W[i,j]; this is an arrow in our circle/arrow diagram
+    return out
+
+FCN_layer_loop_full(W,x)
+
+
+# CNN
+W = np.random.rand(3,5,2) # k x d_1 x d_0
+x = np.random.rand(10,2)  # T x d_0
+
+def CNN_layer_loop_full(W,x):
+    filter_size, out_dim, in_dim = W.shape
+    T = x.shape[0]
+    T = T - filter_size + 1 # boundary stuff
+    
+    W_flip = W[::-1] # flip the filters to correspond with how Keras does things (no flipping)
+
+    out = np.zeros((T, out_dim))
+    for i in range(out_dim):
+        for j in range(in_dim):
+            out[:,i] += scipy.signal.convolve(x[:,j],W_flip[:,i,j], mode='valid')
+    
+    return out
+
+CNN_layer_loop_full(W,x)
+
+model = Sequential()
+model.add(Conv1D(5, kernel_size=3, input_shape=(10,2)))
+model.set_weights((np.swapaxes(W,1,2), np.zeros(5)))
+model.predict(x[None])[0]
+
+```
+
+
+```{python strides, eval=FALSE}
+### Notice that these 2 layers have same parameters
+model.add(Conv1D(5, kernel_size=3, input_shape=(100,2), padding='same'))
+model.add(MaxPooling1D(pool_size=2))
+
+model.add(Conv1D(5, kernel_size=3, strides=2, input_shape=(100,2), padding='same'))
+
+# The results would not be identical though (for the same filters!), because with MaxPooling we're taking the max of every 2 outputs, instead of just keeping only the first one. With the right choice of filters, they might end up the same, which essentially makes the architectures equivalent.
+# The pros/cons of these two approaches are not super clear to me. 
+
+```
+
+
+
+
+### 2D convnets: `Conv2D` layer
+
+
+- I will use $h$ and $w$ to denote the height and width; this is instead of $T$ for the 1D sequence length.
+
+- As with the 1D case, you might have multiple features _per point in the signal_. A very common situation with images is to have 3 colour channels. In fact, _channel_ ($d$) is the general term typically used here, rather than feature. 
+- 2D CNNs work with **any number of channels**. 
+- Critically, note that the number of parameters does not depend on the input image size (e.g. $50\times 100$). The number of parameters will eventually be affected by the input image size, but only after (hidden data) flattening. 
+- The filters are now 2D and can also be visualized as images. 
+- Thus, the weight tensor is actually 4D. **These are the parameters that you learn with SGD**. 
+- `MaxPooling2D`: this does basically the exact same thing as 1D pooling, except that we are free to choose a separate pool factor for each dimension (but typically use the same one). BTW it's valid syntax to just specify an integer(not recommended) if you want them all the same. 
+
+
+```{python 2D ConvNet, eval=FALSE}
+model = Sequential()
+model.add(Conv2D(5, kernel_size=(11,11), input_shape=(milad.shape[0],milad.shape[1],3), padding='same', activation='sigmoid'))
+#                ^d_1            ^k_0                 ^h             ^w             ^d_0 
+
+model.add(MaxPooling2D(pool_size=(2,2)))
+#                                ^k is reduced by a factor of 2 in each direction
+
+model.summary()
+
+
+## 2D convnets: end-to-end example
+mnist_model = Sequential()
+mnist_model.add(Conv2D(32, (5, 5), input_shape=(28, 28, 1), activation='relu'))
+mnist_model.add(MaxPooling2D(pool_size=(2, 2)))
+mnist_model.add(Conv2D(50, (5, 5), activation='relu'))
+mnist_model.add(MaxPooling2D(pool_size=(2, 2)))
+mnist_model.add(Flatten())
+mnist_model.add(Dense(128, activation='relu'))
+mnist_model.add(Dense(10, activation='softmax'))
+
+mnist_model.summary()
+```
+
+
+## Off Topic: Floating Point & their Storage
+
+- In practice there's one bit used as the "sign bit"
+- Since we don't need both positive 0 and negative 0, we keep one extra number on the negative side. So a 64-bit integer ranges from $-2^{63}$ to $2^{63}-1$, inclusive. 
+
+### Decimal numbers in binary
+
+- Instead of multiples of $10$ we do multiples of $2$ even in decimal numbers. 
+
+Exercise: convert $110.101$ to base 10. 
+
+$$\begin{align*}
+    1\times 2^2 + 0\times 2^1 + 1\times 2^0 + 1\times 2^{-1} + 1\times 2^{-2}
+= 4+1+0.5+0.25 = 5.75
+\end{align*}$$
+
+
+### Floating point
+
+Everything is represented in "scientific notation". In other words, $A \times 10^B$. Except in this case it's more like $1.M \times 2^E$, where $M$ is called the mantissa and $E$ is called the exponent.
+
+Examples:
+
+| number in base 10  | scientific notation (base 10) | scientific notation (binary) | mantissa (M)  | exponent (E)  | 
+|--------------------|-------------------------------|------------------------------|--------|--------|
+|  $2$               |  $1.0\times 2^1$              |  $1.0 \times 2^1$            | $0$    |  $1$   |
+|  $10$              |  $1.25\times 2^3$             |  $1.01\times 2^{11}$         | $01$   |  $11$  | 
+| $0.375$            |  $1.5\times 2^{-2} $          |  $1.1\times 2^{-10}$         | $1$    |  $-10$ |
+| $0.1$              |  $1.6 \times 2^{-4}$          | $1.100110011\ldots \times 2^{-100}$       | $100110011$...   | $-100$ |
+
+
+- Some numbers that are short in base 10 are (infinitely) long in base 2, like $0.1$. We have infinitely long numbers like this in base 10 too, like $1/3$. 
+
+- Key info: in [IEEE](https://en.wikipedia.org/wiki/IEEE_floating_point) double precision, we use 1 bit for the overall sign, 52 bits for the mantissa and 11 bits for the exponent (total = 64 bits). 
+
+```
+import struct
+def binary(num):
+    packed = struct.pack('!d', float(num))
+    integers = [c for c in packed]
+    binaries = [bin(i) for i in integers]
+    stripped_binaries = [s.replace('0b', '') for s in binaries]
+    padded = [s.rjust(8, '0') for s in stripped_binaries]
+    final = ''.join(padded)
+    assert len(final) == 64
+    # alternate approach
+
+    sign, exponent_plus_1023, mantissa = final[0], final[1:12], final[12:]
+    
+    sign_str = "" if int(sign) == 0 else "-"
+
+    mantissa_base10_scale = int(mantissa, 2)
+    mantissa_base10 = mantissa_base10_scale / 2**52 # shift decimal point from end of binary string to beginning of it
+    mantissa_base10 = round(mantissa_base10, 8) # purely for cosmetic reasons, not actually part of it
+    mantissa_base10_str = str(mantissa_base10)[2:] # throw away the leading "0."
+    exponent_base10 = int(exponent_plus_1023, 2) - 1023
+    print("%s = %s1.%s x 2^%s" % (num, sign_str, mantissa_base10_str, exponent_base10))
+
+    print()
+    
+    print("%s %s %s" % (sign, exponent_plus_1023, mantissa))
+    print("^       ^                        ^")
+    print("sign    exponent+1023 (%d)     mantissa (%s)" % (exponent_base10+1023, mantissa_base10))
+
+binary(10)
+```
+
+- Instead of storing the 11-bit exponent as a signed integer from $-1023$ to $1024$, it is actually stored as an unsigned integer from $0$ to $2047$. So you need to read the number from the raw bits and then subtract $1023$. 
+
+- numbers are not represented exactly. 
+- most calculations are "wrong". 
+- when these errors are introduced, **you might not get an error message or warning**. 
+- most numbers cannot be represented. 
+- even most _integers_ cannot be represented as floating point numbers. 
+- there is a biggest number. 
+- there is a smallest number. 
+- most environments you'll encounter will use IEEE double precision... but others do exist (especially single precision). 
+
+
+### Spacing between numbers 
+
+Imagine you were in the decimal system (not binary), and were using scientific notation but you were only allowed 3 digits after the decimal point. How large is the _spacing_ between the given number and the _next largest number that we can represent_? 
+
+- $8.982$
+- $3.432\times 10^2$
+- $0.001\times 10^1$
+
+Conclusion: we only need to look at the exponent. The same goes for binary. The steps happen at every power of 2 instead of 10, and we have way more digits after the decimal (52 instead of 3), but everything else is pretty much the same.
+
+So the spacing size, as a function of the number itself, is a staircase function. 
+The spacing at 1.0 is 2**-52. 
+
+```
+# Try these 
+
+1.0 + 1e-20 == 1.0
+0.3 - 0.2 - 0.1
+
+2**-52
+
+1e16+1+1 == 1+1+1e16
+1 + 1 + 1e16 == 1e16 # makes sense
+1e16 + 1 + 1 == 1e16 # ????
+1e16 + 1 + 1 +1+1+1+1+1+1+1+1+1 == 1e16
+
+```
+
+__Take-home message about roundoff errors (!!)__: The error in representing a number $\approx$ the number itself $\times \, 10^{-16}$ 
+
+- The spacing between $10^{16}$ and the next largest number must be more than 2, so when 1 is added to $10^{16}$ we round back down to $10^{16}$. $2$ because `2**-52` is approximately $2.22 * 10^{-16}$. 
+
+
+- When $z\gg1$ we can say $1+\exp(z)\approx \exp(z)$ and in that case $\log(1+\exp(z))\approx \log(\exp(z)) = z$, because for large $z$ we get overflow error on this function. This is the loss function of Logistic Regression. 
+
+- This is one (of many) reasons why we use libraries like sklearn rather than implementing things ourself. Other reasons: speed, edge cases, updates over time, less likely to contain a bug. 
+
+- If you actually need the inverse, then you must compute it. Use a solve function to compute this directly, rather than going to $x=A^{-1}b$. 
+
+
+

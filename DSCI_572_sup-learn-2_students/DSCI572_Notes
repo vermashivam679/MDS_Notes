@@ -1,0 +1,324 @@
+when there are more than 1 input then in that case the output is not scalar therefore we can use vectors to represent the result.
+
+gradient of a function is a vactor of partial derivatives of that function with respect to the inputs of that function. 
+
+gradient divided by modulas of gradient is the direction of fastest change for a function(example loss function).
+
+
+
+
+robust linear regression uses Mean Absolute Error/Deviation (MAD) because the squared error can cause a big problem in case of outliers.
+
+
+If I had used MAD instead of MSE in demand forecasting then the accuracy might have been higher for a larger network.
+
+
+
+
+mean is the point where the squared distance are minimized. median is the point where the absolute difference is minimized.
+
+
+3 Steps of a ML Modeling
+	Choose Model
+	Choose loss function
+	Choose optimization algorithm
+
+Logistic & SVM are very similar just the loss function is very different
+
+
+
+
+
+
+
+
+
+
+
+
+number 1.6 on base 10 is a rational number with infinite digits in decimal places(like 1/3 in base 10) in base 2 thats why when we use 1.6 its gonna be errorenous.
+
+
+
+
+
+
+IEEE double precision number format converter...  
+	https://www.h-schmidt.net/FloatConverter/IEEE754.html  
+
+
+
+
+Inpractice its good to choose adaptive learning rate that automattically adjusts it instead setting constant \alpha
+
+
+
+
+tuning learning rate hyperparameter is important because a lot is dependent on it
+
+
+
+
+
+
+
+
+
+## Neural Networks
+
+Non-parametric
+
+There are many parameters but they are not discrete. Hyeperparameteres are discrete and are also large.
+
+Neural networks are super-ininterpretable. 
+
+
+
+
+if we don't have h(), does nothing then W2*(W1*X) == (W2*W1)*X
+
+
+
+ReLU is computationally simple and fast. No sensical explanation as to why this works well.... because of computational advantage in optimization. 
+
+
+
+
+
+stochastic gradient descent is like a special trick of gradient descent but gradient descent can be applied to any function because we are minimizing the loss. 
+    SGD can be applied to a subset of problems whereas GD is a more general. 
+
+
+
+number of layer = number of hidden layers + 1
+
+
+
+
+
+softmax is like the softer version of the max function. 
+
+
+
+
+
+
+
+
+read about softmax, OVO, propotional odds. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# [item.shape for item in mdl.weights]
+
+classifiers['sklearn NN'].activation
+classifiers['sklearn NN'].hidden_layer_sizes
+
+
+
+
+
+
+
+
+
+filename = 'finalized_model.sav'
+pickle.dump(model, open(filename, 'wb'))
+ 
+# some time later...
+ 
+# load the model from disk
+loaded_model = pickle.load(open(filename, 'rb'))
+result = loaded_model.score(X_test, Y_test)
+print(result)
+
+
+
+
+
+
+
+# How to use gridsearchCV for Keras
+    https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
+
+
+
+
+
+
+
+
+Ordinary Least Squares Complexity
+The least squares solution is computed using the singular value decomposition of X. If X is a matrix of shape (n_samples, n_features) this method has a cost of O(n_samples*(n_features^2)), assuming that n_samples >= n_features. 
+
+
+
+
+SVM: Higher dimensional data from existing 784 dimensions, & RBF kernel behaves similar to nearest neighbors which has the curse of dimensionality(same with KNN). 
+
+
+WTF is a tensor:
+    https://www.kdnuggets.com/2018/05/wtf-tensor.html
+
+
+
+
+
+
+
+
+convolutions help learn the new things and not learn things over & over again... because for example a circle in image and we are looking for circles in images...It will try to learn a filter of circle and identify things effectively
+
+
+
+identify structured dimesanion of data 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- You can think of this as 3 sequences (temp sequence, wind speed sequence, rainfall sequence), or as one sequence of 3D vectors. 
+  - For today, let's go with the latter.
+- This means _each training example is a sequence of vectors or, in other words, a 2D array_
+  - This is a big departure from what we're used to, where each training example is a vector (1D array).
+- Now, if we want to store our entire dataset in one variable, it's a 3D array: (number of training examples) $\times$ (number of steps in sequence) $\times$ (number of features). Before, $X$ was just 2D, with dimensions $n \times d$. Let's use $T$ to denote the number of steps. So then $X$ is $n \times T \times d$.
+
+
+
+
+Example: 5 filters, each of size 3. The signals are of length 100 with 1 feature. **We're going from 1 feature to 5 features.**
+In symbols, $d_0=1$, $d_1=5$, $T=100$, and $k_0=3$ (let's use $k$ to denote the filter sizes).
+
+model = Sequential()
+model.add(Conv1D(5, kernel_size=3, input_shape=(100,1), padding='same'))
+#                ^d_1           ^k_0            ^T  ^d_0 
+model.summary()
+
+out_example = model.predict(x[None,:,None])
+plt.plot(x, '--k');
+plt.plot(out_example[0]);
+plt.title("Output of applying the Conv1D layer");
+
+
+### 1D convnets: end-to-end example
+model = Sequential()
+model.add(Conv1D(5, kernel_size=3, input_shape=(100,2), padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Conv1D(7, kernel_size=3, padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Flatten())
+model.add(Dense(10)) # for 10-class classification `model.add(Dense(1))` # for regression
+# one could add more Dense layers here
+model.summary()
+
+x = np.random.rand(1,100,2) # n=1, T=100, d=2
+x.shape
+model.predict(x) # just a number
+
+
+
+Number of Parameters: $d_0*d_1*k_0$
+
+`model.get_weights()[0].shape`: Shape of $1_{st}$ hidden layer. $(k_0, d_0, d_1)$
+
+
+- Output shape is: $(n, T, d_1)$. 
+
+- Input Shape: $(n, T, d_0)$. 
+
+
+
+
+
+
+W = np.random.randn(5,2)
+x = np.random.rand(2)
+
+
+model = Sequential()
+model.add(Dense(5, input_dim=2))
+model.set_weights((W.T, np.zeros(5)))
+x = model.predict(x[None])[0]
+
+print(W@x)
+print(model.predict(x[None])[0])
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lec 8
+
+
+TFFTF
+
+TFTT last 2 could be false if number of weights decrease despite increase in number of layers because of lesser neurons... It is false :)
+
+
+
+
+
+deeplearning in unsup.... explore
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
